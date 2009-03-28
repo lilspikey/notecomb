@@ -17,6 +17,17 @@ class MainFrame(wx.Frame):
         self.search.ShowCancelButton(True)
         
         self.text=wx.stc.StyledTextCtrl(self,style=wx.TE_MULTILINE|wx.NO_BORDER|wx.WANTS_CHARS)
+        self.text.SetCaretLineVisible(True)
+        self.text.SetCaretWidth(3)
+        self.text.SetUseAntiAliasing(True)
+        
+        style=self.text.GetStyleAt(0)
+        self.text.StyleSetEOLFilled(style,True)
+        self.text.SetMargins(0,0)
+        self.text.SetMarginWidth(1,0)
+        self.text.SetWrapMode(wx.stc.STC_WRAP_WORD)
+        
+        self.SetRegularColours()
         
         self.Bind(wx.stc.EVT_STC_MODIFIED, self.Modified)
         self.Bind(wx.EVT_TEXT, self.Search)
@@ -32,15 +43,37 @@ class MainFrame(wx.Frame):
         self.SetSizer(sizer)
         self.Layout()
     
+    def SetRegularColours(self):
+        self.text.SetForegroundColour('#000000')
+        self.text.SetBackgroundColour('#FFFFFF')
+        self.text.StyleSetBackground(wx.stc.STC_STYLE_DEFAULT,'#FFFFFF')
+        style=self.text.GetStyleAt(0)
+        self.text.StyleSetBackground(style,'#FFFFFF')
+        self.text.SetCaretLineBackground('#EEEEEE')
+    
+    def SetSearchColours(self):
+        self.text.SetForegroundColour('#000000')
+        self.text.SetBackgroundColour('#FFFF99')
+        self.text.StyleSetBackground(wx.stc.STC_STYLE_DEFAULT,'#FFFF99')
+        style=self.text.GetStyleAt(0)
+        self.text.StyleSetBackground(style,'#FFFF99')
+        self.text.SetCaretLineBackground('#EEEE99')
+    
     def SearchCancelled(self,event):
         self.search.SetValue('')
     
     def Search(self,event):
-        q=self.search.GetValue()
+        q=self.search.GetValue()    
         self.doc.search(q)
+        if q:
+            self.SetSearchColours()
+        else:
+            self.SetRegularColours()
         self._update_visible_text()
     
     def _update_visible_text(self):
+        # disable modification events while we
+        # update the text in the text area
         mod_mask=self.text.GetModEventMask()
         self.text.SetModEventMask(0)
         self.text.SetText(self.doc.visible_text)
@@ -57,24 +90,18 @@ class MainFrame(wx.Frame):
         
         if action:
             action(event)
-        
-        print mod_type, wx.stc.STC_MOD_INSERTTEXT
-        print repr(self.doc.visible_text)
-        print repr(self.text.GetText())
     
     def ModifiedInsertText(self, event):
-        if self.doc.visible_text != self.text.GetText():
-            offset=event.GetPosition()
-            text=event.GetText()
+        offset=event.GetPosition()
+        text=event.GetText()
         
-            self.doc.insert(offset, text)
+        self.doc.insert(offset, text)
     
     def ModifiedDeleteText(self, event):
-        if self.doc.visible_text != self.text.GetText():
-            offset=event.GetPosition()
-            length=event.GetLength()
+        offset=event.GetPosition()
+        length=event.GetLength()
         
-            self.doc.remove(offset, length)
+        self.doc.remove(offset, length)
 
 class App(wx.App):
 
