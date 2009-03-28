@@ -13,16 +13,21 @@ class MainFrame(wx.Frame):
         
         self.menubar=wx.MenuBar()
         
-        self.search=wx.SearchCtrl(self)
+        self.panel=wx.Panel(self)
+        
+        self.search=wx.SearchCtrl(self.panel)
         self.search.ShowCancelButton(True)
         
-        self.text=wx.stc.StyledTextCtrl(self,style=wx.TE_MULTILINE|wx.NO_BORDER|wx.WANTS_CHARS)
+        self.text=wx.stc.StyledTextCtrl(self.panel,style=wx.TE_MULTILINE|wx.NO_BORDER|wx.WANTS_CHARS)
         self.text.SetCaretLineVisible(True)
-        self.text.SetCaretWidth(3)
         self.text.SetUseAntiAliasing(True)
+        self.text.ConvertEOLs(wx.stc.STC_EOL_LF)
+        self.text.SetEOLMode(wx.stc.STC_EOL_LF)
         
         style=self.text.GetStyleAt(0)
         self.text.StyleSetEOLFilled(style,True)
+        self.text.SetMarginType(0,wx.stc.STC_MARGIN_NUMBER)
+        self.text.SetMarginWidth(0,16)
         self.text.SetMargins(0,0)
         self.text.SetMarginWidth(1,0)
         self.text.SetWrapMode(wx.stc.STC_WRAP_WORD)
@@ -35,12 +40,11 @@ class MainFrame(wx.Frame):
         
         sizer=wx.BoxSizer(wx.VERTICAL)
         
-        sizer.Add(self.search, 0, flag=wx.EXPAND)
-        sizer.AddSpacer((5,5))
+        sizer.Add(self.search, 0, flag=wx.EXPAND|wx.ALL, border=5)
+        sizer.Add((5,5), 0)
         sizer.Add(self.text, 1, flag=wx.EXPAND|wx.GROW|wx.ALL)
         
-        self.SetAutoLayout(True)
-        self.SetSizer(sizer)
+        self.panel.SetSizer(sizer)
         self.Layout()
     
     def SetRegularColours(self):

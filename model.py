@@ -16,12 +16,19 @@ class Document(object):
                 offset += len(line)
             if not self._visible:
                 self._visible.append(self.Visible(0,0))
+            else:
+                # make the last visible section's line ending not visible
+                # so we don't get an empty line showing int he search results
+                last_visible=self._visible[-1]
+                text=last_visible.text(self._text)
+                if text.endswith("\n"):
+                    last_visible.length -=1
         else:
             self._visible=[self.Visible(0,len(self._text))]
     
     @property
     def visible_text(self):
-        return ''.join(v.visible(self._text) for v in self._visible)
+        return ''.join(v.text(self._text) for v in self._visible)
     
     @property
     def text(self):
@@ -71,11 +78,11 @@ class Document(object):
         while True:
             merged=False
             for i, visible in enumerate(self._visible[:-1]):
-                text=visible.visible(self._text)
+                text=visible.text(self._text)
                 if not text.endswith("\n"):
                     merged=True
                     other_visible=self._visible[i+1]
-                    other_text=other_visible.visible(self._text)
+                    other_text=other_visible.text(self._text)
                     
                     self._move_text(other_visible.offset, visible.offset+visible.length, other_text)
                     
@@ -88,12 +95,14 @@ class Document(object):
             if not merged:
                 # make sure there's a newline after the last visible section (if there's more text after it)
                 last_visible=self._visible[-1]
-                text=last_visible.visible(self._text)
+                text=last_visible.text(self._text)
                 if not text.endswith("\n"):
                     last_offset=last_visible.offset+last_visible.length
-                    # check more text after visiable and not empty
+                    # check if more text after visible and not empty
                     if last_offset < len(self._text) and not last_visible.is_empty:
-                        self._text = self._text[:last_offset] + "\n" + self._text[last_offset:]
+                        text_after=self._text[last_offset:]
+                        if not text_after.startswith("\n"):
+                            self._text = self._text[:last_offset] + "\n" + text_after
                 return
     
     def _move_text(self,from_offset,to_offset,text):
@@ -104,7 +113,7 @@ class Document(object):
             self.offset=offset
             self.length=length
         
-        def visible(self,text):
+        def text(self,text):
             return text[self.offset:self.offset+self.length]
         
         @property
