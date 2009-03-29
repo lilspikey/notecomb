@@ -14,9 +14,9 @@ class MainFrame(wx.Frame):
         self.menubar=wx.MenuBar()
         
         edit_menu=wx.Menu()
-        self.undo_menu_item=edit_menu.Append(-1,"Undo\tCtrl-Z")
+        self.undo_menu_item=edit_menu.Append(wx.ID_UNDO,"Undo\tCtrl-Z")
         self.Bind(wx.EVT_MENU, self.OnUndo, self.undo_menu_item)
-        self.redo_menu_item=edit_menu.Append(-1,"Redo\tShift-Ctrl-Z")
+        self.redo_menu_item=edit_menu.Append(wx.ID_REDO,"Redo\tShift-Ctrl-Z")
         self.Bind(wx.EVT_MENU, self.OnRedo, self.redo_menu_item)
         #edit_menu.AppendSeparator()
         
@@ -35,6 +35,7 @@ class MainFrame(wx.Frame):
         self.text.ConvertEOLs(wx.stc.STC_EOL_LF)
         self.text.SetEOLMode(wx.stc.STC_EOL_LF)
         self.text.SetUndoCollection(0)
+        self.text.SetFocus()
         
         style=self.text.GetStyleAt(0)
         self.text.StyleSetEOLFilled(style,True)
@@ -49,6 +50,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.stc.EVT_STC_MODIFIED, self.Modified)
         self.Bind(wx.EVT_TEXT, self.Search)
         self.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN, self.SearchCancelled)
+        self.text.Bind(wx.EVT_SET_FOCUS, self.TextSetFocus)
         
         sizer=wx.BoxSizer(wx.VERTICAL)
         
@@ -60,6 +62,10 @@ class MainFrame(wx.Frame):
         self.Layout()
         
         self.UpdateFromDoc()
+    
+    def TextSetFocus(self,event):
+        self.UpdateMenus()
+        event.Skip()
     
     def UpdateFromDoc(self):
         self.UpdateMenus()
