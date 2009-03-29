@@ -172,7 +172,7 @@ class UndoableDocument(Document):
     
     def _remove_text(self, offset, length):
         if self.current_undo:
-            self.current_undo.append(UndoInsert(self, offset, length))
+            self.current_undo.append(UndoRemove(self, offset, length))
         super(UndoableDocument,self)._remove_text(offset, length)
 
 

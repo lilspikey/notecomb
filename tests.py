@@ -168,6 +168,17 @@ class UndoableDocumentTestCase(unittest.TestCase):
         self.assert_( self.doc.can_undo() )
         self.assertEqual( self.doc.text, 'here is some text' )
     
+    def test_undo_remove(self):
+        self.doc.insert(0,'here is some text')
+        self.assertEqual( self.doc.text, 'here is some text' )
+        
+        self.doc.remove(1, 2)
+        self.assertEqual( self.doc.text, 'he is some text' )
+        
+        self.assert_( self.doc.can_undo() )
+        self.doc.undo()
+        self.assertEqual( self.doc.text, 'here is some text' )
+    
     def test_undo_insert_search(self):
         self.doc.insert(0,'here is some text\nhello there')
         self.doc.search('hello')
@@ -192,3 +203,36 @@ class UndoableDocumentTestCase(unittest.TestCase):
         self.assertEqual( self.doc.current_search, '')
         self.assertEqual( self.doc.visible_text, '' )
         self.assertEqual( self.doc.text, '')
+    
+    def test_undo_remove_search(self):
+        self.doc.insert(0,'here is some text\nhello there')
+        self.doc.search('hello')
+        self.assertEqual( self.doc.visible_text, 'hello there' )
+        
+        self.doc.remove(1, 2)
+        self.assertEqual( self.doc.visible_text, 'hlo there' )
+
+        self.assert_( self.doc.can_undo() )
+        self.doc.undo()
+        self.assertEqual( self.doc.current_search, 'hello')
+        self.assertEqual( self.doc.visible_text, 'hello there' )
+        self.assertEqual( self.doc.text, 'here is some text\nhello there' )
+    
+    def test_undo_remove_search_accross_visible(self):
+        self.doc.insert(0,'hello today\nhere is some text\nhello there')
+        self.doc.search('hello')
+        self.assertEqual( self.doc.visible_text, 'hello today\nhello there' )
+        
+        self.doc.remove(10, 3)
+        self.assertEqual( self.doc.visible_text, 'hello todaello there' )
+        self.assertEqual( self.doc.text, 'hello todaello there\nhere is some text\n' )
+        
+        self.assert_( self.doc.can_undo() )
+        self.doc.undo()
+        self.assertEqual( self.doc.current_search, 'hello')
+        self.assertEqual( self.doc.visible_text, 'hello today\nhello there' )
+        self.assertEqual( self.doc.text, 'hello today\nhere is some text\nhello there' )
+        
+        self.doc.undo()
+        self.assertEqual( self.doc.visible_text, self.doc.text )
+        self.assertEqual( self.doc.text, '' )
