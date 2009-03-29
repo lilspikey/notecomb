@@ -1,3 +1,5 @@
+from copy import copy
+from difflib import SequenceMatcher
 
 class Document(object):
     def __init__(self):
@@ -25,6 +27,7 @@ class Document(object):
                     last_visible.length -=1
         else:
             self._visible=[self.Visible(0,len(self._text))]
+        self.current_search=q
     
     @property
     def visible_text(self):
@@ -37,7 +40,7 @@ class Document(object):
     def insert(self, offset, text):
         visible_offset, visible, other_visible = self._find_visible_from_offset(offset)
         actual_offset=visible.offset + (offset-visible_offset)
-        self._text=self._text[:actual_offset]+text+self._text[actual_offset:]
+        self._insert_text(actual_offset, text)
         length=len(text)
         visible.length += length
         # shift other visible sections along by same amount
@@ -63,14 +66,27 @@ class Document(object):
         
             # how much we can remove from this visible section
             length_removed=min(length, visible.length-(offset-visible_offset))
-        
-            self._text=self._text[:actual_offset]+self._text[actual_offset+length_removed:]
+            self._remove_text(actual_offset, length_removed)
             visible.length -= length_removed
         
             self._move_visible(other_visible,-length_removed)
             
             length -= length_removed
         self._merge_visible()
+    
+    def _remove_text(self, offset, length):
+        '''remove text from the underlying text'''
+        self._text=self._text[:offset]+self._text[offset+length:]
+    
+    def _insert_text(self, offset, text):
+        '''insert text into underlying text'''
+        self._text=self._text[:offset]+text+self._text[offset:]
+    
+    def _move_text(self,from_offset,to_offset,length):
+        text=self._text[from_offset:from_offset+length]
+        self._remove_text(from_offset, length)
+        self._insert_text(to_offset, text)
+
     
     def _merge_visible(self):
         # any visible lines that are now joined together,
@@ -82,14 +98,13 @@ class Document(object):
                 if not text.endswith("\n"):
                     merged=True
                     other_visible=self._visible[i+1]
-                    other_text=other_visible.text(self._text)
-                    
-                    self._move_text(other_visible.offset, visible.offset+visible.length, other_text)
+                    other_length=other_visible.length
+                    self._move_text(other_visible.offset, visible.offset+visible.length, other_length)
                     
                     self._visible.remove(other_visible)
                     
-                    visible.length += len(other_text)
-                    self._move_visible(self._visible[i+1:], len(other_text))
+                    visible.length += other_length
+                    self._move_visible(self._visible[i+1:], other_length)
                     
                     break
             if not merged:
@@ -102,11 +117,9 @@ class Document(object):
                     if last_offset < len(self._text) and not last_visible.is_empty:
                         text_after=self._text[last_offset:]
                         if not text_after.startswith("\n"):
-                            self._text = self._text[:last_offset] + "\n" + text_after
+                            self._insert_text(last_offset, "\n")
                 return
     
-    def _move_text(self,from_offset,to_offset,text):
-        self._text=self._text[:to_offset]+text+self._text[to_offset:from_offset]+self._text[from_offset+len(text):]
     
     class Visible(object):
         def __init__(self,offset,length):
@@ -119,3 +132,83 @@ class Document(object):
         @property
         def is_empty(self):
             return self.length == 0
+
+def undoable(fn):
+    def _decorated(self,*args):
+        self.current_undo=UndoAction(self)
+        fn(self, *args)
+        self.undos.append(self.current_undo)
+        self.current_undo=None
+    return _decorated
+
+
+class UndoableDocument(Document):
+
+    def __init__(self):
+        super(UndoableDocument,self).__init__()
+        self.undos=[]
+        self.current_undo=None
+    
+    def can_undo(self):
+        return len(self.undos) > 0
+    
+    def undo(self):
+        if self.can_undo():
+            last_undo,self.undos=self.undos[-1],self.undos[:-1]
+            last_undo.undo(self)
+    
+    @undoable
+    def insert(self, offset, text):
+        super(UndoableDocument,self).insert(offset, text)
+    
+    @undoable
+    def remove(self, offset, length):
+        super(UndoableDocument,self).remove(offset,length)
+    
+    def _insert_text(self, offset, text):
+        if self.current_undo:
+            self.current_undo.append(UndoInsert(self, offset, text))
+        super(UndoableDocument,self)._insert_text(offset, text)
+    
+    def _remove_text(self, offset, length):
+        if self.current_undo:
+            self.current_undo.append(UndoInsert(self, offset, length))
+        super(UndoableDocument,self)._remove_text(offset, length)
+
+
+class UndoAction(object):
+    def __init__(self, doc):
+        self.visible=[copy(v) for v in doc._visible]
+        self.current_search=doc.current_search
+        self.actions=[]
+    
+    def undo(self, doc):
+        doc._visible=self.visible
+        doc.current_search=self.current_search
+        for action in reversed(self.actions):
+            action.undo(doc)
+    
+    def append(self, action):
+        self.actions.append(action)
+
+class UndoInsert(object):
+    
+    def __init__(self, doc, offset, text):
+        self.offset=offset
+        self.text=text
+    
+    def undo(self, doc):
+        doc._remove_text(self.offset,len(self.text))
+
+class UndoRemove(object):
+
+    def __init__(self, doc, offset, length):
+        self.offset=offset
+        self.text=doc.text[offset:offset+length]
+
+    def undo(self, doc):
+        doc._insert_text(self.offset,self.text)
+
+
+
+            

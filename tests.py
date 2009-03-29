@@ -1,7 +1,7 @@
 import unittest
 import random
 
-from model import Document
+from model import Document, UndoableDocument
 
 class DocumentTestCase(unittest.TestCase):
 
@@ -41,11 +41,13 @@ class DocumentTestCase(unittest.TestCase):
     def test_search(self):
         self.doc.insert(0,'hello there\nthis is a test\nof search')
         self.doc.search('hello')
-        self.assertEqual(self.doc.visible_text, 'hello there\n')
+        self.assertEqual(self.doc.current_search, 'hello')
+        
+        self.assertEqual(self.doc.visible_text, 'hello there')
         self.doc.search('o')
         self.assertEqual(self.doc.visible_text, 'hello there\nof search')
         self.doc.search('th')
-        self.assertEqual(self.doc.visible_text, 'hello there\nthis is a test\n')
+        self.assertEqual(self.doc.visible_text, 'hello there\nthis is a test')
         self.doc.search('')
         self.assertEqual(self.doc.visible_text, 'hello there\nthis is a test\nof search')
     
@@ -57,9 +59,9 @@ class DocumentTestCase(unittest.TestCase):
         self.doc.insert(0,'hello there\nthis is a test\nof search')
         
         self.doc.search('test')
-        self.assertEqual(self.doc.visible_text, 'this is a test\n')
+        self.assertEqual(self.doc.visible_text, 'this is a test')
         self.doc.insert(0, 'again ')
-        self.assertEqual(self.doc.visible_text, 'again this is a test\n')
+        self.assertEqual(self.doc.visible_text, 'again this is a test')
         self.assertEqual(self.doc.text,'hello there\nagain this is a test\nof search')
         
         self.doc.search('')
@@ -143,3 +145,50 @@ class DocumentTestCase(unittest.TestCase):
             self.doc.remove(offset, length)
             self.assertEqual( self.doc.visible_text, visible_text_before )
             self.assertEqual( self.doc.text, text_before )
+
+class UndoableDocumentTestCase(unittest.TestCase):
+    
+    def setUp(self):
+        self.doc=UndoableDocument()
+    
+    def test_undo_insert(self):
+        self.doc.insert(0,'here is some text')
+        self.assertEqual( self.doc.text, 'here is some text' )
+        
+        self.assert_( self.doc.can_undo() )
+        self.doc.undo()
+        self.assert_( not self.doc.can_undo() )
+        self.assertEqual( self.doc.text, '' )
+        
+        self.doc.insert(0,'here is some text')
+        self.doc.insert(2,'3')
+        self.assertEqual( self.doc.text, 'he3re is some text' )
+        self.assert_( self.doc.can_undo() )
+        self.doc.undo()
+        self.assert_( self.doc.can_undo() )
+        self.assertEqual( self.doc.text, 'here is some text' )
+    
+    def test_undo_insert_search(self):
+        self.doc.insert(0,'here is some text\nhello there')
+        self.doc.search('hello')
+        self.assertEqual( self.doc.visible_text, 'hello there' )
+        
+        self.doc.insert(0, '123 ')
+        self.assertEqual( self.doc.visible_text, '123 hello there' )
+        self.assertEqual( self.doc.text, 'here is some text\n123 hello there')
+        
+        self.assert_( self.doc.can_undo() )
+        self.doc.undo()
+        
+        self.assertEqual( self.doc.visible_text, 'hello there' )
+        self.assertEqual( self.doc.text, 'here is some text\nhello there')
+        
+        self.assertEqual( self.doc.current_search, 'hello')
+        
+        self.assert_( self.doc.can_undo() )
+        self.doc.undo()
+        self.assert_( not self.doc.can_undo() )
+        
+        self.assertEqual( self.doc.current_search, '')
+        self.assertEqual( self.doc.visible_text, '' )
+        self.assertEqual( self.doc.text, '')
