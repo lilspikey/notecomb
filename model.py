@@ -140,15 +140,17 @@ class Document(object):
         def is_empty(self):
             return self.length == 0
 
-def undoable(fn):
-    def _decorated(self,*args):
-        self.current_undo=UndoAction(self)
-        fn(self, *args)
-        self.current_undo.update_redo(self)
-        self.undos.append(self.current_undo)
-        self.redos=[]
-        self.current_undo=None
-    return _decorated
+def undoable(description):
+    def _decorator(fn):
+        def _decorated(self,*args):
+            self.current_undo=UndoAction(self, description)
+            fn(self, *args)
+            self.current_undo.update_redo(self)
+            self.undos.append(self.current_undo)
+            self.redos=[]
+            self.current_undo=None
+        return _decorated
+    return _decorator
 
 
 class UndoableDocument(Document):
@@ -177,15 +179,15 @@ class UndoableDocument(Document):
             last_redo.redo(self)
             self.undos.append(last_redo)
     
-    @undoable
+    @undoable('Search')
     def search(self, q):
         super(UndoableDocument,self).search(q)
     
-    @undoable
+    @undoable('Insert')
     def insert(self, offset, text):
         super(UndoableDocument,self).insert(offset, text)
     
-    @undoable
+    @undoable('Remove')
     def remove(self, offset, length):
         super(UndoableDocument,self).remove(offset,length)
     
@@ -201,7 +203,8 @@ class UndoableDocument(Document):
 
 
 class UndoAction(object):
-    def __init__(self, doc):
+    def __init__(self, doc, description):
+        self.description=description
         self.visible=[copy(v) for v in doc._visible]
         self.current_search=doc.current_search
         self.current_offset=doc.current_offset
@@ -228,6 +231,9 @@ class UndoAction(object):
     
     def append(self, action):
         self.actions.append(action)
+    
+    def __repr__(self):
+        return 'UndoAction(%s)' % self.description
 
 class UndoInsert(object):
     

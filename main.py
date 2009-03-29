@@ -34,6 +34,7 @@ class MainFrame(wx.Frame):
         self.text.SetUseAntiAliasing(True)
         self.text.ConvertEOLs(wx.stc.STC_EOL_LF)
         self.text.SetEOLMode(wx.stc.STC_EOL_LF)
+        self.text.SetUndoCollection(0)
         
         style=self.text.GetStyleAt(0)
         self.text.StyleSetEOLFilled(style,True)
@@ -136,8 +137,7 @@ class MainFrame(wx.Frame):
     
     def ModifiedInsertText(self, event):
         offset=event.GetPosition()
-        text=event.GetText()
-        
+        text=self.text.GetTextRange(offset, offset+event.GetLength())
         self.doc.insert(offset, text)
     
     def ModifiedDeleteText(self, event):
