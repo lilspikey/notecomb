@@ -2,16 +2,26 @@ import wx
 import wx.stc
 import sys
 
-from model import Document
+from model import UndoableDocument
 
 class MainFrame(wx.Frame):
     def __init__(self,parent):
         wx.Frame.__init__(self,parent,title='Observertron')
         
         
-        self.doc=Document()
+        self.doc=UndoableDocument()
         
         self.menubar=wx.MenuBar()
+        
+        edit_menu=wx.Menu()
+        self.undo_menu_item=edit_menu.Append(-1,"Undo\tCtrl-Z")
+        self.Bind(wx.EVT_MENU, self.OnUndo, self.undo_menu_item)
+        #self.Bind(wx.EVT_MENU, self.OnRedo, edit_menu.Append(-1,"Redo\tShift-Ctrl-Z"))
+        #edit_menu.AppendSeparator()
+        
+        self.menubar.Append(edit_menu, "&Edit")
+        
+        self.SetMenuBar(self.menubar)
         
         self.panel=wx.Panel(self)
         
@@ -46,6 +56,17 @@ class MainFrame(wx.Frame):
         
         self.panel.SetSizer(sizer)
         self.Layout()
+        
+        self.UpdateFromDoc()
+    
+    def UpdateFromDoc(self):
+        self.UpdateMenus()
+        self.search.ChangeValue(self.doc.current_search)
+        self._update_colours()
+        self._update_visible_text()
+    
+    def UpdateMenus(self):
+        self.undo_menu_item.Enable(self.doc.can_undo())
     
     def SetRegularColours(self):
         self.text.SetForegroundColour('#000000')
@@ -63,16 +84,24 @@ class MainFrame(wx.Frame):
         self.text.StyleSetBackground(style,'#FFFF99')
         self.text.SetCaretLineBackground('#EEEE99')
     
+    def OnUndo(self,event):
+        if self.doc.can_undo():
+            self.doc.undo()
+            self.UpdateFromDoc()
+    
+    def _update_colours(self):
+        if self.doc.current_search:
+            self.SetSearchColours()
+        else:
+            self.SetRegularColours()
+    
     def SearchCancelled(self,event):
         self.search.SetValue('')
     
     def Search(self,event):
         q=self.search.GetValue()    
         self.doc.search(q)
-        if q:
-            self.SetSearchColours()
-        else:
-            self.SetRegularColours()
+        self._update_colours()
         self._update_visible_text()
     
     def _update_visible_text(self):
@@ -94,6 +123,8 @@ class MainFrame(wx.Frame):
         
         if action:
             action(event)
+        
+        self.UpdateMenus()
     
     def ModifiedInsertText(self, event):
         offset=event.GetPosition()
