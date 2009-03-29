@@ -197,7 +197,9 @@ class UndoableDocumentTestCase(unittest.TestCase):
         self.assertEqual( self.doc.current_search, 'hello')
         
         self.assert_( self.doc.can_undo() )
-        self.doc.undo()
+        self.doc.undo() # undo search
+        self.assert_( self.doc.can_undo() )
+        self.doc.undo() # undo first insert
         self.assert_( not self.doc.can_undo() )
         
         self.assertEqual( self.doc.current_search, '')
@@ -233,6 +235,41 @@ class UndoableDocumentTestCase(unittest.TestCase):
         self.assertEqual( self.doc.visible_text, 'hello today\nhello there' )
         self.assertEqual( self.doc.text, 'hello today\nhere is some text\nhello there' )
         
-        self.doc.undo()
+        self.doc.undo() # undo search
+        self.doc.undo() # undo first insert
         self.assertEqual( self.doc.visible_text, self.doc.text )
         self.assertEqual( self.doc.text, '' )
+    
+    def test_undo_redo(self):
+        self.doc.insert(0,'hello today\nhere is some text\nhello there')
+        self.assertEqual( self.doc.visible_text, 'hello today\nhere is some text\nhello there')
+        
+        self.doc.search('hello')
+        
+        self.assertEqual( self.doc.visible_text, 'hello today\nhello there' )
+        self.assert_( not self.doc.can_redo() )
+        self.assertEqual( self.doc.current_search, 'hello')
+        
+        self.doc.undo() # undo the search
+        self.assertEqual( self.doc.visible_text, 'hello today\nhere is some text\nhello there')
+        self.assertEqual( self.doc.current_search, '')
+        
+        self.assert_( self.doc.can_redo() )
+        self.doc.redo() # redo the search
+        
+        self.assertEqual( self.doc.visible_text, 'hello today\nhello there' )
+        self.assert_( not self.doc.can_redo() )
+        self.assertEqual( self.doc.current_search, 'hello')
+        
+        self.doc.undo() # undo the search again
+        # now do something else and verify we have lost the redo
+        self.assert_( self.doc.can_redo() )
+        
+        self.doc.insert(0, '12')
+        self.assert_( not self.doc.can_redo() )
+        self.assertEqual( self.doc.visible_text, '12hello today\nhere is some text\nhello there')
+        
+        self.doc.undo()
+        self.assertEqual( self.doc.visible_text, 'hello today\nhere is some text\nhello there')
+        self.doc.redo()
+        self.assertEqual( self.doc.visible_text, '12hello today\nhere is some text\nhello there')

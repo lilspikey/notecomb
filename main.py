@@ -16,7 +16,8 @@ class MainFrame(wx.Frame):
         edit_menu=wx.Menu()
         self.undo_menu_item=edit_menu.Append(-1,"Undo\tCtrl-Z")
         self.Bind(wx.EVT_MENU, self.OnUndo, self.undo_menu_item)
-        #self.Bind(wx.EVT_MENU, self.OnRedo, edit_menu.Append(-1,"Redo\tShift-Ctrl-Z"))
+        self.redo_menu_item=edit_menu.Append(-1,"Redo\tShift-Ctrl-Z")
+        self.Bind(wx.EVT_MENU, self.OnRedo, self.redo_menu_item)
         #edit_menu.AppendSeparator()
         
         self.menubar.Append(edit_menu, "&Edit")
@@ -67,6 +68,7 @@ class MainFrame(wx.Frame):
     
     def UpdateMenus(self):
         self.undo_menu_item.Enable(self.doc.can_undo())
+        self.redo_menu_item.Enable(self.doc.can_redo())
     
     def SetRegularColours(self):
         self.text.SetForegroundColour('#000000')
@@ -87,6 +89,11 @@ class MainFrame(wx.Frame):
     def OnUndo(self,event):
         if self.doc.can_undo():
             self.doc.undo()
+            self.UpdateFromDoc()
+    
+    def OnRedo(self,event):
+        if self.doc.can_redo():
+            self.doc.redo()
             self.UpdateFromDoc()
     
     def _update_colours(self):
@@ -110,6 +117,7 @@ class MainFrame(wx.Frame):
         mod_mask=self.text.GetModEventMask()
         self.text.SetModEventMask(0)
         self.text.SetText(self.doc.visible_text)
+        self.text.GotoPos(self.doc.current_offset)
         self.text.SetModEventMask(mod_mask)
     
     def Modified(self,event):

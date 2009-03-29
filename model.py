@@ -4,7 +4,9 @@ from difflib import SequenceMatcher
 class Document(object):
     def __init__(self):
         self._text=''
-        self.search('')
+        self.current_offset=0
+        self.current_search=''
+        self._visible=[self.Visible(0,0)]
     
     def search(self,q):
         if q:
@@ -28,6 +30,7 @@ class Document(object):
         else:
             self._visible=[self.Visible(0,len(self._text))]
         self.current_search=q
+        self.current_offset=0
     
     @property
     def visible_text(self):
@@ -45,6 +48,8 @@ class Document(object):
         visible.length += length
         # shift other visible sections along by same amount
         self._move_visible(other_visible,length)
+        
+        self.current_offset=offset+len(text)
     
     def _find_visible_from_offset(self,offset):
         visible_offset=0
@@ -73,6 +78,8 @@ class Document(object):
             
             length -= length_removed
         self._merge_visible()
+        
+        self.current_offset=offset
     
     def _remove_text(self, offset, length):
         '''remove text from the underlying text'''
@@ -137,7 +144,9 @@ def undoable(fn):
     def _decorated(self,*args):
         self.current_undo=UndoAction(self)
         fn(self, *args)
+        self.current_undo.update_redo(self)
         self.undos.append(self.current_undo)
+        self.redos=[]
         self.current_undo=None
     return _decorated
 
@@ -147,15 +156,30 @@ class UndoableDocument(Document):
     def __init__(self):
         super(UndoableDocument,self).__init__()
         self.undos=[]
+        self.redos=[]
         self.current_undo=None
     
     def can_undo(self):
         return len(self.undos) > 0
     
+    def can_redo(self):
+        return len(self.redos) > 0
+    
     def undo(self):
         if self.can_undo():
             last_undo,self.undos=self.undos[-1],self.undos[:-1]
             last_undo.undo(self)
+            self.redos.append(last_undo)
+    
+    def redo(self):
+        if self.can_redo():
+            last_redo,self.redos=self.redos[-1],self.redos[:-1]
+            last_redo.redo(self)
+            self.undos.append(last_redo)
+    
+    @undoable
+    def search(self, q):
+        super(UndoableDocument,self).search(q)
     
     @undoable
     def insert(self, offset, text):
@@ -180,13 +204,27 @@ class UndoAction(object):
     def __init__(self, doc):
         self.visible=[copy(v) for v in doc._visible]
         self.current_search=doc.current_search
+        self.current_offset=doc.current_offset
         self.actions=[]
+    
+    def update_redo(self, doc):
+        self.redo_visible=[copy(v) for v in doc._visible]
+        self.redo_current_search=doc.current_search
+        self.redo_current_offset=doc.current_offset
     
     def undo(self, doc):
         doc._visible=self.visible
         doc.current_search=self.current_search
+        doc.current_offset=self.current_offset
         for action in reversed(self.actions):
             action.undo(doc)
+    
+    def redo(self, doc):
+        doc._visible=self.redo_visible
+        doc.current_search=self.redo_current_search
+        doc.current_offset=self.redo_current_offset
+        for action in self.actions:
+            action.redo(doc)
     
     def append(self, action):
         self.actions.append(action)
@@ -199,6 +237,9 @@ class UndoInsert(object):
     
     def undo(self, doc):
         doc._remove_text(self.offset,len(self.text))
+    
+    def redo(self, doc):
+        doc._insert_text(self.offset,self.text)
 
 class UndoRemove(object):
 
@@ -208,6 +249,9 @@ class UndoRemove(object):
 
     def undo(self, doc):
         doc._insert_text(self.offset,self.text)
+    
+    def redo(self, doc):
+        doc._remove_text(self.offset,len(self.text))
 
 
 
