@@ -285,13 +285,14 @@ class MainFrame(DocumentFrame):
         self.prefs=Preferences()
         self.prefs.changed += self.prefs_changed
         self.set_show_linenumbers(self.prefs.get(PREF_SHOW_LINENUMBERS,True))
-        self.set_auto_save(self.prefs.get(PREF_AUTO_SAVE,True))
+        
+        self.timer=wx.Timer(self,-1)
+        self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
+        self.timer.Start(5*60*1000)
     
     def prefs_changed(self, key, value):
         if key == PREF_SHOW_LINENUMBERS:
             self.set_show_linenumbers(value)
-        elif key == PREF_AUTO_SAVE:
-            self.set_auto_save(value)
     
     def set_show_linenumbers(self, value):
         if value:
@@ -299,8 +300,16 @@ class MainFrame(DocumentFrame):
         else:
             self.text.SetMarginWidth(0,0)
     
-    def set_auto_save(self, value):
-        pass
+    @check_for_modification
+    def OnQuit(self,event):
+        self.timer.Stop()
+        self.Destroy()
+    
+    def OnTimer(self, event):
+        if self.prefs.get(PREF_AUTO_SAVE,True):
+            if self.doc.is_modified:
+                self.doc.save()
+                self.UpdateMenus()
     
     def TextSetFocus(self,event):
         self.UpdateMenus()
