@@ -68,7 +68,17 @@ class DocumentFrame(wx.Frame):
         self.UpdateFromDoc()
     
     def OnOpen(self,event):
-        pass
+        # TODO check for modifications
+        dialog=wx.FileDialog(self,"Open File",'','','Obs File (*.obs)|*.obs|All File|*.*', wx.FD_OPEN)
+        dialog.Centre()
+        filename=None
+        if dialog.ShowModal() == wx.ID_OK:
+            filename = dialog.GetPath()
+        dialog.Destroy()
+        
+        if filename:
+            self.doc.open(filename)
+            self.UpdateFromDoc()
     
     def OnSave(self,event):
         if self.doc.filename:
@@ -78,7 +88,13 @@ class DocumentFrame(wx.Frame):
             self.OnSaveAs(event)
     
     def OnSaveAs(self,event):
+        dialog=wx.FileDialog(self,"Save File As...",'','','Obs File (*.obs)|*.obs|All File|*.*', wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        dialog.Centre()
         filename=None
+        if dialog.ShowModal() == wx.ID_OK:
+            filename = dialog.GetPath()
+        dialog.Destroy()
+        
         if filename:
             self.doc.save_as(filename)
             self.UpdateMenus()

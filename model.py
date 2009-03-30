@@ -4,11 +4,14 @@ from difflib import SequenceMatcher
 class Document(object):
     def __init__(self):
         self._text=''
-        self.current_offset=0
-        self.current_search=''
-        self._visible=[self.Visible(0,0)]
         self.filename=None
         self.is_modified=False
+        self._initial_state()
+    
+    def _initial_state(self):
+        self.current_offset=0
+        self.current_search=''
+        self._visible=[self.Visible(0,len(self._text))]
     
     @property
     def is_saved(self):
@@ -16,12 +19,26 @@ class Document(object):
     
     def save(self):
         if self.filename:
-            self.is_modified=False
+            file=open(self.filename,'w')
+            try:
+                file.write(self._text)
+                self.is_modified=False
+            finally:
+                file.close()
     
     def save_as(self, filename):
         self.filename=filename
         self.save()
     
+    def open(self, filename):
+        file=open(filename,'rU')
+        try:
+            self._text=file.read()
+            self.is_modified=False
+            self._initial_state()
+            self.filename=filename
+        finally:
+            file.close()
     
     def search(self,q):
         if q:
@@ -65,6 +82,7 @@ class Document(object):
         self._move_visible(other_visible,length)
         
         self.current_offset=offset+len(text)
+        self.is_modified=True
     
     def _find_visible_from_offset(self,offset):
         visible_offset=0
@@ -95,6 +113,7 @@ class Document(object):
         self._merge_visible()
         
         self.current_offset=offset
+        self.is_modified=True
     
     def _remove_text(self, offset, length):
         '''remove text from the underlying text'''
