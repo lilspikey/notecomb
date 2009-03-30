@@ -76,6 +76,10 @@ class DocumentFrame(wx.Frame):
         self.UpdateMenus()
     
     def UpdateMenus(self):
+        title=self.doc.filename or '<untitled>'
+        if self.doc.is_modified:
+            title += '*'
+        self.SetTitle(title)
         self.file_save.Enable(not self.doc.is_saved)
         self.edit_undo.Enable(self.doc.can_undo())
         self.edit_redo.Enable(self.doc.can_redo())
