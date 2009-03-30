@@ -7,6 +7,21 @@ class Document(object):
         self.current_offset=0
         self.current_search=''
         self._visible=[self.Visible(0,0)]
+        self.filename=None
+        self.is_modified=False
+    
+    @property
+    def is_saved(self):
+        return not self.is_modified and self.filename is not None
+    
+    def save(self):
+        if self.filename:
+            self.is_modified=False
+    
+    def save_as(self, filename):
+        self.filename=filename
+        self.save()
+    
     
     def search(self,q):
         if q:

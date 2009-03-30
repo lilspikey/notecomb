@@ -4,25 +4,110 @@ import sys
 
 from model import UndoableDocument
 
-class MainFrame(wx.Frame):
-    def __init__(self,parent):
-        wx.Frame.__init__(self,parent,title='Observertron')
+APP_NAME='Observertron'
+
+class DocumentFrame(wx.Frame):
+    '''
+    class to hook up standard menus etc
+    '''
+    
+    __DOCUMENT_CLASS__=None
+    
+    def __init__(self,*args,**kw):
+        super(DocumentFrame,self).__init__(*args,**kw)
         
-        
-        self.doc=UndoableDocument()
+        self.doc=self.__DOCUMENT_CLASS__()
         
         self.menubar=wx.MenuBar()
         
-        edit_menu=wx.Menu()
-        self.undo_menu_item=edit_menu.Append(wx.ID_UNDO,"Undo\tCtrl-Z")
-        self.Bind(wx.EVT_MENU, self.OnUndo, self.undo_menu_item)
-        self.redo_menu_item=edit_menu.Append(wx.ID_REDO,"Redo\tShift-Ctrl-Z")
-        self.Bind(wx.EVT_MENU, self.OnRedo, self.redo_menu_item)
-        #edit_menu.AppendSeparator()
+        # file menu
+        self.file_menu=wx.Menu()
+        self.menubar.Append(self.file_menu, "&File")
         
-        self.menubar.Append(edit_menu, "&Edit")
+        self.AddMenuItem(self.file_menu, "New\tCtrl-N", self.OnNew, -1)
+        self.AddMenuItem(self.file_menu, "Open...\tCtrl-O", self.OnOpen, -1)
+        self.file_menu.AppendSeparator()
+        
+        self.file_save=self.AddMenuItem(self.file_menu, "Save\tCtrl-S", self.OnSave, -1)
+        self.AddMenuItem(self.file_menu, "Save As...\tShift-Ctrl-S", self.OnSaveAs, -1)
+        self.file_menu.AppendSeparator()
+        
+        self.AddMenuItem(self.file_menu, "Preferences...\tCtrl-K", self.OnPreferences, -1)
+        self.file_menu.AppendSeparator()
+        
+        self.AddMenuItem(self.file_menu, "Quit %s\tCtrl-Q" % APP_NAME, self.OnQuit, -1)
+        
+        self.Bind(wx.EVT_CLOSE, self.OnQuit)
+        
+        self.edit_menu=wx.Menu()
+        self.menubar.Append(self.edit_menu, "&Edit")
+        
+        self.edit_undo=self.AddMenuItem(self.edit_menu, "Undo\tCtrl-Z", self.OnUndo, wx.ID_UNDO)
+        self.edit_redo=self.AddMenuItem(self.edit_menu, "Redo\tShift-Ctrl-Z", self.OnRedo, wx.ID_REDO)
         
         self.SetMenuBar(self.menubar)
+        
+        self.UpdateMenus()
+    
+    def AddMenuItem(self, menu, label, handler, id):
+        menu_item=menu.Append(id,label)
+        self.Bind(wx.EVT_MENU, handler, menu_item)
+        return menu_item
+    
+    def UpdateFromDoc(self):
+        self.UpdateMenus()
+    
+    def UpdateMenus(self):
+        self.file_save.Enable(not self.doc.is_saved)
+        self.edit_undo.Enable(self.doc.can_undo())
+        self.edit_redo.Enable(self.doc.can_redo())
+    
+    def OnNew(self,event):
+        # TODO check for modifications
+        self.doc=self.__DOCUMENT_CLASS__()
+        self.UpdateFromDoc()
+    
+    def OnOpen(self,event):
+        pass
+    
+    def OnSave(self,event):
+        if self.doc.filename:
+            self.doc.save()
+            self.UpdateMenus()
+        else:
+            self.OnSaveAs(event)
+    
+    def OnSaveAs(self,event):
+        filename=None
+        if filename:
+            self.doc.save_as(filename)
+            self.UpdateMenus()
+    
+    def OnPreferences(self,event):
+        pass
+    
+    def OnQuit(self,event):
+        # TODO check whether modified
+        self.Destroy()
+    
+    def OnUndo(self,event):
+        if self.doc.can_undo():
+            self.doc.undo()
+            self.UpdateFromDoc()
+    
+    def OnRedo(self,event):
+        if self.doc.can_redo():
+            self.doc.redo()
+            self.UpdateFromDoc()
+    
+    
+    
+class MainFrame(DocumentFrame):
+    
+    __DOCUMENT_CLASS__=UndoableDocument
+    
+    def __init__(self,parent):
+        super(MainFrame,self).__init__(parent,title='Observertron')
         
         self.panel=wx.Panel(self)
         
@@ -68,14 +153,10 @@ class MainFrame(wx.Frame):
         event.Skip()
     
     def UpdateFromDoc(self):
-        self.UpdateMenus()
+        super(MainFrame,self).UpdateFromDoc()
         self.search.ChangeValue(self.doc.current_search)
         self._update_colours()
         self._update_visible_text()
-    
-    def UpdateMenus(self):
-        self.undo_menu_item.Enable(self.doc.can_undo())
-        self.redo_menu_item.Enable(self.doc.can_redo())
     
     def SetRegularColours(self):
         self.text.SetForegroundColour('#000000')
@@ -92,16 +173,6 @@ class MainFrame(wx.Frame):
         style=self.text.GetStyleAt(0)
         self.text.StyleSetBackground(style,'#FFFF99')
         self.text.SetCaretLineBackground('#EEEE99')
-    
-    def OnUndo(self,event):
-        if self.doc.can_undo():
-            self.doc.undo()
-            self.UpdateFromDoc()
-    
-    def OnRedo(self,event):
-        if self.doc.can_redo():
-            self.doc.redo()
-            self.UpdateFromDoc()
     
     def _update_colours(self):
         if self.doc.current_search:
@@ -155,16 +226,11 @@ class MainFrame(wx.Frame):
 class App(wx.App):
 
     def OnInit(self):
-        self.SetAppName('Observertron')
+        self.SetAppName(APP_NAME)
         frame=MainFrame(None)
-
-        #frame.CenterOnScreen()
-        #frame.SetSize(wx.DisplaySize())
-
+        
         frame.Show()
-        #frame.ShowFullScreen(True)
-        #frame.SetPosition((0,0))
-
+        
         #for name in sys.argv[1:]:
         #    frame.Load(name)
 
