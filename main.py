@@ -48,6 +48,7 @@ class Preferences(Singleton):
 
 PREF_SHOW_LINENUMBERS='SHOW_LINENUMBERS'
 PREF_AUTO_SAVE='AUTO_SAVE'
+PREF_RECENT_FILES='recent_files'
 
 class PrefDialog(wx.Dialog):
     def __init__(self,parent):
@@ -134,6 +135,11 @@ class DocumentFrame(wx.Frame):
         
         self.AddMenuItem(self.file_menu, "New\tCtrl-N", self.OnNew, -1)
         self.AddMenuItem(self.file_menu, "Open...\tCtrl-O", self.OnOpen, -1)
+        
+        self.file_open_recent=wx.Menu()
+        self.file_menu.AppendSubMenu(self.file_open_recent,"Open Recent")
+        self.file_clear_menu=self.AddMenuItem(self.file_open_recent, "Clear Menu", self.OnClearMenu, -1)
+        
         self.file_menu.AppendSeparator()
         
         self.file_save=self.AddMenuItem(self.file_menu, "Save\tCtrl-S", self.OnSave, -1)
@@ -155,7 +161,10 @@ class DocumentFrame(wx.Frame):
         
         self.SetMenuBar(self.menubar)
         
+        self.prefs=Preferences()
+        
         self.UpdateMenus()
+        self.update_recent_files_menu()
     
     def AddMenuItem(self, menu, label, handler, id):
         menu_item=menu.Append(id,label)
@@ -193,6 +202,7 @@ class DocumentFrame(wx.Frame):
     
     def Load(self,filename):
         self.doc.open(filename)
+        self._update_recent_files(filename)
         self.UpdateFromDoc()
     
     def OnSave(self,event):
@@ -212,6 +222,7 @@ class DocumentFrame(wx.Frame):
         
         if filename:
             self.doc.save_as(filename)
+            self._update_recent_files(filename)
             self.UpdateMenus()
     
     def OnPreferences(self,event):
@@ -220,6 +231,40 @@ class DocumentFrame(wx.Frame):
         if dialog.ShowModal() == wx.ID_OK:
             dialog.UpdatePrefs()
         dialog.Destroy()
+    
+    def update_recent_files_menu(self):
+        recent_files=self.prefs.get('recent_files',[])
+        self.file_clear_menu.Enable(len(recent_files)>0)
+        
+        # remove all, but last item
+        while self.file_open_recent.GetMenuItemCount() > 1:
+            menu_items=self.file_open_recent.GetMenuItems()
+            self.file_open_recent.RemoveItem(menu_items[0])
+        
+        if len(recent_files) > 0:
+            self.file_open_recent.PrependSeparator()
+            for file in reversed(recent_files):
+                menu_item=self.file_open_recent.Prepend(-1,file)
+                self.BindRecentFile(menu_item, file)
+    
+    def BindRecentFile(self, menu_item, file):
+        self.Bind(wx.EVT_MENU, lambda event: self.OpenRecentFile(file), menu_item)
+    
+    @check_for_modification
+    def OpenRecentFile(self, file):
+        self.Load(file)
+    
+    def _update_recent_files(self, file_name):
+        recent_files=self.prefs.get('recent_files',[])
+        if file_name in recent_files:
+            recent_files.remove(file_name)
+        recent_files.insert(0, file_name)
+        if len(recent_files) > 8:
+            recent_files=recent_files[:8]
+        self.prefs.set('recent_files', recent_files)
+
+    def OnClearMenu(self,event):
+        self.prefs.set('recent_files', [])
     
     @check_for_modification
     def OnQuit(self,event):
@@ -282,7 +327,6 @@ class MainFrame(DocumentFrame):
         
         self.UpdateFromDoc()
         
-        self.prefs=Preferences()
         self.prefs.changed += self.prefs_changed
         self.set_show_linenumbers(self.prefs.get(PREF_SHOW_LINENUMBERS,True))
         
@@ -293,6 +337,8 @@ class MainFrame(DocumentFrame):
     def prefs_changed(self, key, value):
         if key == PREF_SHOW_LINENUMBERS:
             self.set_show_linenumbers(value)
+        elif key == PREF_RECENT_FILES:
+            self.update_recent_files_menu()
     
     def set_show_linenumbers(self, value):
         if value:
