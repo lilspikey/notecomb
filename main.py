@@ -6,6 +6,24 @@ from model import UndoableDocument
 
 APP_NAME='Observertron'
 
+def check_for_modification(fn):
+    def _decorated(self,event):
+        if self.doc.is_modified:
+            dialog=wx.MessageDialog(self,"Your changes will be lost if you don't save them.","Do you want to save your changes?",wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION)
+            result=dialog.ShowModal()
+            dialog.Destroy()
+            if result != wx.ID_CANCEL:
+                if result == wx.ID_YES:
+                    # save changes
+                    self.OnSave(event)
+                    # cancelled save, so don't allow the event
+                    if self.doc.is_modified:
+                        return
+            else:
+                return
+        return fn(self,event)
+    return _decorated
+
 class DocumentFrame(wx.Frame):
     '''
     class to hook up standard menus etc
@@ -35,7 +53,7 @@ class DocumentFrame(wx.Frame):
         self.AddMenuItem(self.file_menu, "Preferences...\tCtrl-K", self.OnPreferences, -1)
         self.file_menu.AppendSeparator()
         
-        self.AddMenuItem(self.file_menu, "Quit %s\tCtrl-Q" % APP_NAME, self.OnQuit, -1)
+        self.AddMenuItem(self.file_menu, "Quit %s\tCtrl-Q" % APP_NAME, self.OnQuit, wx.ID_EXIT)
         
         self.Bind(wx.EVT_CLOSE, self.OnQuit)
         
@@ -62,13 +80,13 @@ class DocumentFrame(wx.Frame):
         self.edit_undo.Enable(self.doc.can_undo())
         self.edit_redo.Enable(self.doc.can_redo())
     
+    @check_for_modification
     def OnNew(self,event):
-        # TODO check for modifications
         self.doc=self.__DOCUMENT_CLASS__()
         self.UpdateFromDoc()
     
+    @check_for_modification
     def OnOpen(self,event):
-        # TODO check for modifications
         dialog=wx.FileDialog(self,"Open File",'','','Obs File (*.obs)|*.obs|All File|*.*', wx.FD_OPEN)
         dialog.Centre()
         filename=None
@@ -102,6 +120,7 @@ class DocumentFrame(wx.Frame):
     def OnPreferences(self,event):
         pass
     
+    @check_for_modification
     def OnQuit(self,event):
         # TODO check whether modified
         self.Destroy()
