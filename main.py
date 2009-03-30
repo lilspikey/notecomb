@@ -95,8 +95,11 @@ class DocumentFrame(wx.Frame):
         dialog.Destroy()
         
         if filename:
-            self.doc.open(filename)
-            self.UpdateFromDoc()
+            self.Load(filename)
+    
+    def Load(self,filename):
+        self.doc.open(filename)
+        self.UpdateFromDoc()
     
     def OnSave(self,event):
         if self.doc.filename:
@@ -262,13 +265,17 @@ class App(wx.App):
 
     def OnInit(self):
         self.SetAppName(APP_NAME)
-        frame=MainFrame(None)
         
-        frame.Show()
+        files=sys.argv[1:]
+        if not files:
+            files=[None]
         
-        #for name in sys.argv[1:]:
-        #    frame.Load(name)
-
+        for file in files:
+            frame=MainFrame(None)
+            frame.Show()
+            if file:
+                frame.Load(file)
+        
         return True
 
 app=App(redirect=False)
