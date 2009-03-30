@@ -1,15 +1,105 @@
 import wx
 import wx.stc
+
 import sys
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from model import UndoableDocument
+from events import Event
 
 APP_NAME='Observertron'
+
+class Singleton(object):
+
+    _instances = {}
+
+    def __new__(cls, *args, **kw):
+        try:
+            instance = Singleton._instances[cls]
+        except KeyError:
+            instance = super(Singleton, cls).__new__(cls, *args, **kw)
+            Singleton._instances[cls] = instance
+        return instance
+
+class Preferences(Singleton):
+    
+    def __init__(self):
+        if 'cfg' not in vars(self):
+            self.cfg=wx.ConfigBase.Get()
+            self.changed=Event()
+    
+    def get(self, key, defaultValue):
+        value=self.cfg.Read(key, '')
+        try:
+            return pickle.loads(str(value))
+        except:
+            return defaultValue
+    
+    def set(self, key, value):
+        result=self.cfg.Write(key, pickle.dumps(value))
+        self.changed(key, value)
+        return result
+    
+    def flush(self):
+        self.cfg.Flush()
+
+PREF_SHOW_LINENUMBERS='SHOW_LINENUMBERS'
+PREF_AUTO_SAVE='AUTO_SAVE'
+
+class PrefDialog(wx.Dialog):
+    def __init__(self,parent):
+        wx.Dialog.__init__(self,parent,title='Preferences')
+        
+        sizer=wx.BoxSizer(wx.VERTICAL)
+        
+        spacer=(5,5)
+        
+        self.prefs=Preferences()
+        
+        self.show_line_numbers=wx.CheckBox(self, -1, "Show line numbers")
+        self.auto_save=wx.CheckBox(self, -1, "Auto-save every five minutes")
+        
+        self.show_line_numbers.SetValue(self.prefs.get(PREF_SHOW_LINENUMBERS,True))
+        self.auto_save.SetValue(self.prefs.get(PREF_AUTO_SAVE,True))
+        
+        sizer.Add(self.show_line_numbers, 0, wx.ALL, 10)
+        sizer.Add(self.auto_save, 0, wx.ALL, 10)
+        
+        button_sizer=wx.StdDialogButtonSizer()
+        
+        cancel=wx.Button(self,wx.ID_CANCEL,"Cancel")
+        ok=wx.Button(self,wx.ID_OK,"Ok")
+        ok.SetDefault()
+        
+        button_sizer.AddButton(cancel)
+        button_sizer.AddButton(ok)
+        
+        button_sizer.SetAffirmativeButton(ok)
+        button_sizer.SetCancelButton(cancel)
+        
+        button_sizer.Realize()
+        
+        sizer.Add(spacer)
+        sizer.Add(spacer)
+        sizer.Add(button_sizer, 0, wx.CENTER|wx.ALL, 10)
+        sizer.Add(spacer)
+        
+        self.SetSizer(sizer)
+        
+        self.Fit()
+    
+    def UpdatePrefs(self):
+        self.prefs.set(PREF_SHOW_LINENUMBERS, self.show_line_numbers.GetValue())
+        self.prefs.set(PREF_AUTO_SAVE, self.auto_save.GetValue())
 
 def check_for_modification(fn):
     def _decorated(self,event):
         if self.doc.is_modified:
             dialog=wx.MessageDialog(self,"Your changes will be lost if you don't save them.","Do you want to save your changes?",wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION)
+            dialog.Center()
             result=dialog.ShowModal()
             dialog.Destroy()
             if result != wx.ID_CANCEL:
@@ -50,7 +140,7 @@ class DocumentFrame(wx.Frame):
         self.AddMenuItem(self.file_menu, "Save As...\tShift-Ctrl-S", self.OnSaveAs, -1)
         self.file_menu.AppendSeparator()
         
-        self.AddMenuItem(self.file_menu, "Preferences...\tCtrl-K", self.OnPreferences, -1)
+        self.AddMenuItem(self.file_menu, "Preferences...\tCtrl-K", self.OnPreferences, wx.ID_PREFERENCES)
         self.file_menu.AppendSeparator()
         
         self.AddMenuItem(self.file_menu, "Quit %s\tCtrl-Q" % APP_NAME, self.OnQuit, wx.ID_EXIT)
@@ -125,11 +215,14 @@ class DocumentFrame(wx.Frame):
             self.UpdateMenus()
     
     def OnPreferences(self,event):
-        pass
+        dialog=PrefDialog(self)
+        dialog.Center()
+        if dialog.ShowModal() == wx.ID_OK:
+            dialog.UpdatePrefs()
+        dialog.Destroy()
     
     @check_for_modification
     def OnQuit(self,event):
-        # TODO check whether modified
         self.Destroy()
     
     def OnUndo(self,event):
@@ -167,7 +260,6 @@ class MainFrame(DocumentFrame):
         style=self.text.GetStyleAt(0)
         self.text.StyleSetEOLFilled(style,True)
         self.text.SetMarginType(0,wx.stc.STC_MARGIN_NUMBER)
-        self.text.SetMarginWidth(0,16)
         self.text.SetMargins(0,0)
         self.text.SetMarginWidth(1,0)
         self.text.SetWrapMode(wx.stc.STC_WRAP_WORD)
@@ -189,6 +281,26 @@ class MainFrame(DocumentFrame):
         self.Layout()
         
         self.UpdateFromDoc()
+        
+        self.prefs=Preferences()
+        self.prefs.changed += self.prefs_changed
+        self.set_show_linenumbers(self.prefs.get(PREF_SHOW_LINENUMBERS,True))
+        self.set_auto_save(self.prefs.get(PREF_AUTO_SAVE,True))
+    
+    def prefs_changed(self, key, value):
+        if key == PREF_SHOW_LINENUMBERS:
+            self.set_show_linenumbers(value)
+        elif key == PREF_AUTO_SAVE:
+            self.set_auto_save(value)
+    
+    def set_show_linenumbers(self, value):
+        if value:
+            self.text.SetMarginWidth(0,32)
+        else:
+            self.text.SetMarginWidth(0,0)
+    
+    def set_auto_save(self, value):
+        pass
     
     def TextSetFocus(self,event):
         self.UpdateMenus()
