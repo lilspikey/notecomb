@@ -158,6 +158,17 @@ class DocumentFrame(wx.Frame):
         
         self.edit_undo=self.AddMenuItem(self.edit_menu, "Undo\tCtrl-Z", self.OnUndo, wx.ID_UNDO)
         self.edit_redo=self.AddMenuItem(self.edit_menu, "Redo\tShift-Ctrl-Z", self.OnRedo, wx.ID_REDO)
+        self.edit_menu.AppendSeparator()
+        self.edit_cut=self.AddMenuItem(self.edit_menu, "Cut\tCtrl-X", self.OnCut, wx.ID_CUT)
+        self.edit_copy=self.AddMenuItem(self.edit_menu, "Copy\tCtrl-C", self.OnCopy, wx.ID_COPY)
+        self.edit_paste=self.AddMenuItem(self.edit_menu, "Paste\tCtrl-V", self.OnPaste, wx.ID_PASTE)
+        self.edit_menu.AppendSeparator()
+        self.edit_select_all=self.AddMenuItem(self.edit_menu, "Select All\tCtrl-A", self.OnSelectAll, -1)
+        
+        self.help_menu=wx.Menu()
+        self.menubar.Append(self.help_menu, "&Help")
+        
+        self.AddMenuItem(self.help_menu, "About %s" % APP_NAME, self.OnAbout, wx.ID_ABOUT)
         
         self.SetMenuBar(self.menubar)
         
@@ -280,6 +291,14 @@ class DocumentFrame(wx.Frame):
             self.doc.redo()
             self.UpdateFromDoc()
     
+    def OnAbout(self,event):
+        info=wx.AboutDialogInfo()
+        info.SetName('Observertron')
+        info.SetVersion('0.2 alpha')
+        info.SetDescription('A program for recording observations')
+        info.AddDeveloper('John Montgomery')
+        info.SetCopyright('(C) John Montgomery 2009')
+        wx.AboutBox(info)
     
     
 class MainFrame(DocumentFrame):
@@ -397,6 +416,21 @@ class MainFrame(DocumentFrame):
         self.doc.search(q)
         self._update_colours()
         self._update_visible_text()
+    
+    def OnCopy(self, event):
+        if self.text.GetSelectedText():
+            self.text.Copy()
+    
+    def OnPaste(self, event):
+        if self.text.CanPaste():
+            self.text.Paste()
+    
+    def OnCut(self, event):
+        if self.text.GetSelectedText():
+            self.text.Cut()
+    
+    def OnSelectAll(self, event):
+        self.text.SelectAll()
     
     def _update_visible_text(self):
         # disable modification events while we
