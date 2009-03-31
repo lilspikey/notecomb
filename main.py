@@ -475,13 +475,19 @@ class App(wx.App):
         if not files:
             files=[None]
         
-        for file in files:
-            frame=MainFrame(None)
-            frame.Show()
-            if file:
-                frame.Load(file)
+        for filename in files:
+            self.OpenFile(filename)
         
         return True
+    
+    def OpenFile(self, filename):
+        frame=MainFrame(None)
+        frame.Show()
+        if filename:
+            frame.Load(filename)
+    
+    def MacOpenFile(self, filename):
+        self.OpenFile(filename)
 
 app=App(redirect=False)
 app.MainLoop()
