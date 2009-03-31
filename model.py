@@ -44,9 +44,10 @@ class Document(object):
         if q:
             self._visible=[]
             offset=0
+            search_words=[w.lower() for w in q.split()]
             # TODO merge visible lines together
             for line in self._text.splitlines(True):
-                if q in line:
+                if self._line_matches(line, search_words):
                     length = len(line)
                     self._visible.append(self.Visible(offset,length))
                 offset += len(line)
@@ -63,6 +64,13 @@ class Document(object):
             self._visible=[self.Visible(0,len(self._text))]
         self.current_search=q
         self.current_offset=0
+    
+    def _line_matches(self, line, search_words):
+        lc_line=line.lower()
+        for word in search_words:
+            if not word in lc_line:
+                return False
+        return True
     
     @property
     def visible_text(self):
