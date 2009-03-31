@@ -51,6 +51,13 @@ class DocumentTestCase(unittest.TestCase):
         self.doc.search('')
         self.assertEqual(self.doc.visible_text, 'hello there\nthis is a test\nof search')
     
+    def test_search_multiple_words(self):
+        self.doc.insert(0,'hello there\nthis is a test\nof search')
+        self.doc.search('this test')
+        self.assertEqual(self.doc.current_search, 'this test')
+        
+        self.assertEqual(self.doc.visible_text, 'this is a test')
+    
     def test_search_and_insert(self):
         self.doc.search('test')
         self.assertEqual(self.doc.visible_text, '')
