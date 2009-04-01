@@ -16,7 +16,7 @@ def py2app_options(setup_args):
 
         setup_args['options']['py2app']={
             'argv_emulation': 1,
-            #'iconfile': 'resources/myapp-icon.icns',
+            'iconfile': 'resources/comb.icns',
             'plist': py2app_plist,
         }
 
