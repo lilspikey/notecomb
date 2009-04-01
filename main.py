@@ -311,7 +311,6 @@ class MainFrame(DocumentFrame):
         self.panel=wx.Panel(self)
         
         self.search=wx.SearchCtrl(self.panel)
-        self.search.ShowCancelButton(True)
         
         self.text=wx.stc.StyledTextCtrl(self.panel,style=wx.TE_MULTILINE|wx.NO_BORDER|wx.WANTS_CHARS)
         self.text.SetCaretLineVisible(True)
@@ -412,7 +411,8 @@ class MainFrame(DocumentFrame):
         self.search.SetValue('')
     
     def Search(self,event):
-        q=self.search.GetValue()    
+        q=self.search.GetValue()
+        self.search.ShowCancelButton(q != '') 
         self.doc.search(q)
         self._update_colours()
         self._update_visible_text()
