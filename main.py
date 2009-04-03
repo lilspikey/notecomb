@@ -141,6 +141,7 @@ class DocumentFrame(wx.Frame):
         self.file_clear_menu=self.AddMenuItem(self.file_open_recent, "Clear Menu", self.OnClearMenu, -1)
         
         self.file_menu.AppendSeparator()
+        self.AddMenuItem(self.file_menu, "Close Window\tCtrl-W", self.OnClose, -1)
         
         self.file_save=self.AddMenuItem(self.file_menu, "Save\tCtrl-S", self.OnSave, -1)
         self.AddMenuItem(self.file_menu, "Save As...\tShift-Ctrl-S", self.OnSaveAs, -1)
@@ -164,6 +165,8 @@ class DocumentFrame(wx.Frame):
         self.edit_paste=self.AddMenuItem(self.edit_menu, "Paste\tCtrl-V", self.OnPaste, wx.ID_PASTE)
         self.edit_menu.AppendSeparator()
         self.edit_select_all=self.AddMenuItem(self.edit_menu, "Select All\tCtrl-A", self.OnSelectAll, -1)
+        self.edit_menu.AppendSeparator()
+        self.edit_find=self.AddMenuItem(self.edit_menu, "Find\tCtrl-F", self.OnFind, -1)
         
         self.help_menu=wx.Menu()
         self.menubar.Append(self.help_menu, "&Help")
@@ -279,6 +282,10 @@ class DocumentFrame(wx.Frame):
     
     @check_for_modification
     def OnQuit(self,event):
+        self.Destroy()
+    
+    @check_for_modification
+    def OnClose(self, event):
         self.Destroy()
     
     def OnUndo(self,event):
@@ -431,6 +438,10 @@ class MainFrame(DocumentFrame):
     
     def OnSelectAll(self, event):
         self.text.SelectAll()
+    
+    def OnFind(self, event):
+        self.search.SetFocus()
+        self.search.SelectAll()
     
     def _update_visible_text(self):
         # disable modification events while we
