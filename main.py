@@ -10,7 +10,6 @@ except ImportError:
 from model import UndoableDocument
 from events import Event
 
-APP_NAME='Observertron'
 
 class Singleton(object):
 
@@ -150,7 +149,7 @@ class DocumentFrame(wx.Frame):
         self.AddMenuItem(self.file_menu, "Preferences...\tCtrl-K", self.OnPreferences, wx.ID_PREFERENCES)
         self.file_menu.AppendSeparator()
         
-        self.AddMenuItem(self.file_menu, "Quit %s\tCtrl-Q" % APP_NAME, self.OnQuit, wx.ID_EXIT)
+        self.AddMenuItem(self.file_menu, "Quit %s\tCtrl-Q" % wx.GetApp().GetAppName(), self.OnQuit, wx.ID_EXIT)
         
         self.Bind(wx.EVT_CLOSE, self.OnQuit)
         
@@ -171,7 +170,7 @@ class DocumentFrame(wx.Frame):
         self.help_menu=wx.Menu()
         self.menubar.Append(self.help_menu, "&Help")
         
-        self.AddMenuItem(self.help_menu, "About %s" % APP_NAME, self.OnAbout, wx.ID_ABOUT)
+        self.AddMenuItem(self.help_menu, "About %s" % wx.GetApp().GetAppName(), self.OnAbout, wx.ID_ABOUT)
         
         self.SetMenuBar(self.menubar)
         
@@ -300,7 +299,7 @@ class DocumentFrame(wx.Frame):
     
     def OnAbout(self,event):
         info=wx.AboutDialogInfo()
-        info.SetName('Observertron')
+        info.SetName(wx.GetApp().GetAppName())
         info.SetVersion('0.2 alpha')
         info.SetDescription('A program for recording observations')
         info.AddDeveloper('John Montgomery')
@@ -478,9 +477,11 @@ class MainFrame(DocumentFrame):
         self.doc.remove(offset, length)
 
 class App(wx.App):
-
+    
+    __APP_NAME__='NoteComb'
+    
     def OnInit(self):
-        self.SetAppName(APP_NAME)
+        self.SetAppName(self.__APP_NAME__)
         
         files=sys.argv[1:]
         if not files:
