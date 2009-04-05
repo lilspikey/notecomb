@@ -497,6 +497,7 @@ class App(wx.App):
         frame.Show()
         if filename:
             frame.Load(filename)
+        print frame.GetHandle()
     
     def MacOpenFile(self, filename):
         self.OpenFile(filename)
