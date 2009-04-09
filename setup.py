@@ -56,13 +56,13 @@ def py2exe_options(setup_args):
 
         setup_args['windows']=[{
             'script': "main.py",
-            'name': "Observertron",
-            'dest_base': "Observertron",
+            'name': "NoteComb",
+            'dest_base': "NoteComb",
             'version': "0.2.0",
             "other_resources": [(24,1,py2exe_manifest)]
         }]
 
-        setup_args['py2exe']={'bundle_files': 1}
+        setup_args['options']['py2exe']={'bundle_files': 1}
         setup_args['zipfile'] = None
         # end of py2exe options
     except ImportError:
