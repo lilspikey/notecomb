@@ -22,6 +22,7 @@ def py2app_options(setup_args):
 
         setup_args['app']=[ 'main.py' ]
         # end py2app options
+        
     except ImportError:
         pass
 
