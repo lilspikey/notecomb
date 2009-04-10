@@ -6,11 +6,11 @@ def py2app_options(setup_args):
         import py2app
         # create py2app options
         py2app_plist = {
-            'CFBundleName':               "Observertron",
+            'CFBundleName':               "NoteComb",
             'CFBundleShortVersionString': "0.2.0",
-            'CFBundleGetInfoString':      "Observertron 0.2.0 alpha",
-            'CFBundleExecutable':         "Observertron",
-            'CFBundleIdentifier':         "com.psychicorigami.observertron",
+            'CFBundleGetInfoString':      "NoteComb 0.2.0 alpha",
+            'CFBundleExecutable':         "NoteComb",
+            'CFBundleIdentifier':         "com.psychicorigami.notecomb",
             'CFBundleDocumentTypes': [ { 'CFBundleTypeExtensions': ["*"], 'CFBundleTypeName': "kUTTypeText", 'CFBundleTypeRole': "Editor" } ],
         }
 
