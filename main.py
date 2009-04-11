@@ -495,6 +495,11 @@ class App(wx.App):
     def OpenFile(self, filename):
         frame=MainFrame(None)
         frame.Show()
+        # show path of executable (will include path to .app on os x)
+        #dialog=wx.MessageDialog(frame,""+sys.executable,""+sys.executable)
+        #dialog.ShowModal()
+        #dialog.Destroy()
+        
         if filename:
             frame.Load(filename)
     
