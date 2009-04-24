@@ -17,6 +17,10 @@ class Document(object):
     def is_saved(self):
         return not self.is_modified and self.filename is not None
     
+    @property
+    def is_empty(self):
+        return not self.is_modified and self.filename is None
+    
     def save(self):
         if self.filename:
             file=open(self.filename,'w')

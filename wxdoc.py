@@ -45,8 +45,9 @@ class Preferences(Singleton):
 def check_for_modification(fn):
     def _decorated(self,event):
         if self.doc.is_modified:
+            self.Raise()
             dialog=wx.MessageDialog(self,"Your changes will be lost if you don't save them.","Do you want to save your changes?",wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION)
-            dialog.Center()
+            dialog.CenterOnParent()
             result=dialog.ShowModal()
             dialog.Destroy()
             if result != wx.ID_CANCEL:
@@ -55,9 +56,9 @@ def check_for_modification(fn):
                     self.OnSave(event)
                     # cancelled save, so don't allow the event
                     if self.doc.is_modified:
-                        return
+                        return wx.ID_CANCEL
             else:
-                return
+                return wx.ID_CANCEL
         return fn(self,event)
     return _decorated
 
@@ -71,7 +72,9 @@ class DocumentFrame(wx.Frame):
 
     def __init__(self,*args,**kw):
         super(DocumentFrame,self).__init__(*args,**kw)
-
+        
+        self.is_closing=False
+        
         self.doc=self.__DOCUMENT_CLASS__()
 
         self.menubar=wx.MenuBar()
@@ -99,7 +102,8 @@ class DocumentFrame(wx.Frame):
 
         self.AddMenuItem(self.file_menu, "Quit %s\tCtrl-Q" % wx.GetApp().GetAppName(), self.OnQuit, wx.ID_EXIT)
 
-        self.Bind(wx.EVT_CLOSE, self.OnQuit)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroyed)
 
         self.edit_menu=wx.Menu()
         self.menubar.Append(self.edit_menu, "&Edit")
@@ -127,6 +131,12 @@ class DocumentFrame(wx.Frame):
         self.UpdateMenus()
         self.update_recent_files_menu()
 
+    def GetDocFilename(self):
+        return self.doc.filename
+    
+    def IsEmpty(self):
+        return self.doc.is_empty
+    
     def AddMenuItem(self, menu, label, handler, id):
         menu_item=menu.Append(id,label)
         self.Bind(wx.EVT_MENU, handler, menu_item)
@@ -144,12 +154,9 @@ class DocumentFrame(wx.Frame):
         self.edit_undo.Enable(self.doc.can_undo())
         self.edit_redo.Enable(self.doc.can_redo())
 
-    @check_for_modification
     def OnNew(self,event):
-        self.doc=self.__DOCUMENT_CLASS__()
-        self.UpdateFromDoc()
+        wx.GetApp().OpenFile(None)
 
-    @check_for_modification
     def OnOpen(self,event):
         dialog=wx.FileDialog(self,"Open File",'','','Obs File (*.obs)|*.obs|All File|*.*', wx.FD_OPEN)
         dialog.Centre()
@@ -159,7 +166,7 @@ class DocumentFrame(wx.Frame):
         dialog.Destroy()
 
         if filename:
-            self.Load(filename)
+            wx.GetApp().OpenFile(filename)
 
     def Load(self,filename):
         self.doc.open(filename)
@@ -212,9 +219,8 @@ class DocumentFrame(wx.Frame):
     def BindRecentFile(self, menu_item, file):
         self.Bind(wx.EVT_MENU, lambda event: self.OpenRecentFile(file), menu_item)
 
-    @check_for_modification
     def OpenRecentFile(self, file):
-        self.Load(file)
+        wx.GetApp().OpenFile(file)
 
     def _update_recent_files(self, file_name):
         recent_files=self.prefs.get('recent_files',[])
@@ -228,13 +234,15 @@ class DocumentFrame(wx.Frame):
     def OnClearMenu(self,event):
         self.prefs.set('recent_files', [])
 
-    @check_for_modification
     def OnQuit(self,event):
-        self.Destroy()
+        wx.GetApp().Quit()
 
     @check_for_modification
     def OnClose(self, event):
         self.Destroy()
+
+    def OnDestroyed(self, event):
+        wx.GetApp().FrameClosed(self)
 
     def OnUndo(self,event):
         if self.doc.can_undo():
@@ -250,9 +258,10 @@ class DocApp(wx.App):
 
     __APP_NAME__='wxdocapp'
     __DOC_FRAME__=DocumentFrame
-
+    
     def OnInit(self):
         self.SetAppName(self.__APP_NAME__)
+        self._frames=[]
 
         files=sys.argv[1:]
         if not files:
@@ -262,13 +271,54 @@ class DocApp(wx.App):
             self.OpenFile(filename)
 
         return True
-
+    
     def OpenFile(self, filename):
-        frame=self.__DOC_FRAME__(None)
+        # see if we already have a window
+        # open for the filename passed in
+        empty_frame=None
+        if filename:
+            for frame in self._frames:
+                if frame.GetDocFilename() == filename:
+                    frame.Raise()
+                    return
+        
+        # otherwise see if there's an empty frame we can use
+        empty_frames=[frame for frame in self._frames if frame.IsEmpty()]
+        if empty_frames:
+            empty_frame=empty_frames[0]
+    
+        if not empty_frame:
+            frame=self.__DOC_FRAME__(None)
+            self._frames.append(frame)
+        else:
+            frame=empty_frame
         frame.Show()
 
         if filename:
             frame.Load(filename)
+        
+        frame.Raise()
 
     def MacOpenFile(self, filename):
         self.OpenFile(filename)
+    
+    def FrameClosed(self, frame):
+        if frame in self._frames:
+            self._frames.remove(frame)
+    
+    def FrameRaised(self, frame):
+        # add frame to front of list
+        self._frames.remove(frame)
+        self._frames.insert(0, frame)
+    
+    def Quit(self):
+        # try to close all windows
+        
+        closing=set()
+        for frame in self._frames:
+            res=frame.OnClose(None)
+            if res == wx.ID_CANCEL:
+                break # cancel pressed
+            closing.add(frame)
+        
+        self._frames=[frame for frame in self._frames if frame not in closing]

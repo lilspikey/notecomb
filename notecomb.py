@@ -122,7 +122,7 @@ class NoteCombFrame(DocumentFrame):
             self.text.SetMarginWidth(0,0)
     
     @check_for_modification
-    def OnQuit(self,event):
+    def OnClose(self,event):
         self.timer.Stop()
         self.Destroy()
     
