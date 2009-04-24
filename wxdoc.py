@@ -104,6 +104,7 @@ class DocumentFrame(wx.Frame):
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroyed)
+        self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
 
         self.edit_menu=wx.Menu()
         self.menubar.Append(self.edit_menu, "&Edit")
@@ -243,6 +244,10 @@ class DocumentFrame(wx.Frame):
 
     def OnDestroyed(self, event):
         wx.GetApp().FrameClosed(self)
+    
+    def OnActivate(self, event):
+        if event.GetActive():
+            wx.GetApp().FrameRaised(self)
 
     def OnUndo(self,event):
         if self.doc.can_undo():
@@ -314,8 +319,12 @@ class DocApp(wx.App):
     def Quit(self):
         # try to close all windows
         
+        # copy list of frames, so as to avoid
+        # problems as windows get raised etc
+        frames=list(self._frames)
+        
         closing=set()
-        for frame in self._frames:
+        for frame in frames:
             res=frame.OnClose(None)
             if res == wx.ID_CANCEL:
                 break # cancel pressed
