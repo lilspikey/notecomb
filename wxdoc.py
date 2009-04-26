@@ -1,12 +1,14 @@
 import wx
 
 import sys
+import tempfile
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
 from events import Event
+from pipe import Pipe
 
 class Singleton(object):
 
@@ -266,16 +268,39 @@ class DocApp(wx.App):
     
     def OnInit(self):
         self.SetAppName(self.__APP_NAME__)
+        
+        self._pipe=Pipe(self.GetAppName() + '-' + wx.GetUserId())
+        
         self._frames=[]
 
         files=sys.argv[1:]
-        if not files:
-            files=[None]
-
-        for filename in files:
-            self.OpenFile(filename)
-
+        self.OpenFiles(files)
+        
         return True
+    
+    def OnExit(self):
+        del self._singleInstanceChecker
+    
+    def OpenFiles(self, files):
+        self._singleInstanceChecker = wx.SingleInstanceChecker(self.GetAppName() + '-' + wx.GetUserId(), tempfile.gettempdir())
+        if self._singleInstanceChecker.IsAnotherRunning():
+            self._pipe.write(files)
+        else:
+            if not files:
+                files=[None]
+
+            for filename in files:
+                self.OpenFile(filename)
+            
+            self.timer=wx.Timer(self,-1)
+            self.Bind(wx.EVT_TIMER, self.CheckForOpenFiles, self.timer)
+            self.timer.Start(1000)
+    
+    def CheckForOpenFiles(self, event):
+        files=self._pipe.read()
+        if files:
+            for filename in files:
+                self.OpenFile(filename)
     
     def OpenFile(self, filename):
         # see if we already have a window
