@@ -250,6 +250,7 @@ class DocumentFrame(wx.Frame):
     def OnActivate(self, event):
         if event.GetActive():
             wx.GetApp().FrameRaised(self)
+        event.Skip() # for mac bug
 
     def OnUndo(self,event):
         if self.doc.can_undo():

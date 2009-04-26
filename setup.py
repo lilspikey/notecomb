@@ -11,12 +11,13 @@ def py2app_options(setup_args):
             'CFBundleGetInfoString':      "NoteComb 0.2.0 alpha",
             'CFBundleExecutable':         "NoteComb",
             'CFBundleIdentifier':         "com.psychicorigami.notecomb",
-            'CFBundleDocumentTypes': [ { 'CFBundleTypeExtensions': ["*"], 'CFBundleTypeName': "kUTTypeText", 'CFBundleTypeRole': "Editor" } ],
+            'CFBundleDocumentTypes': [ { 'CFBundleTypeExtensions': ["*"], 'CFBundleTypeName': "kUTTypeText", 'CFBundleTypeRole': "Editor", "CFBundleTypeIconFile": "combdoc.icns" } ],
         }
 
         setup_args['options']['py2app']={
             'argv_emulation': 1,
             'iconfile': 'resources/comb.icns',
+            'resources': ['resources/combdoc.icns'],
             'plist': py2app_plist,
         }
 
