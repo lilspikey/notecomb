@@ -2,6 +2,7 @@ import tempfile
 import os, os.path
 import time
 import mmap
+import sys
 try:
     import cPickle as pickle
 except ImportError:
@@ -13,17 +14,18 @@ a class that doesn't depend on wx
 '''
 
 def open_shared_mem(name):
-    tfile = file(os.path.join(tempfile.gettempdir(), tempfile.gettempprefix() + name + "SharedMemory"), 'w+b')
-    # ensure at least 1024 bytes in file
-    tfile.write("*")
-    tfile.seek(1024)
-    tfile.write(" ")
-    tfile.flush()
-    fno = tfile.fileno()
-    try:
-        # try windows version first
+    if sys.platform == 'win32':
+        tfile = tempfile.TemporaryFile(prefix=name,suffix="tmp")
+        fno = tfile.fileno()
         return mmap.mmap(fno, 1024, tagname='shared_memory')
-    except TypeError:
+    else:
+        tfile = file(os.path.join(tempfile.gettempdir(), tempfile.gettempprefix() + name + "SharedMemory"), 'w+b')
+        # ensure at least 1024 bytes in file
+        tfile.write("*")
+        tfile.seek(1024)
+        tfile.write(" ")
+        tfile.flush()
+        fno = tfile.fileno()
         return mmap.mmap(fno, 1024)
 
 class Pipe(object):
