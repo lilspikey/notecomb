@@ -62,6 +62,8 @@ class NoteCombFrame(DocumentFrame):
     __DOCUMENT_CLASS__=UndoableDocument
     __PREFS_DIALOG__=PrefDialog
     
+    _show_line_numbers=False
+    
     def __init__(self,parent):
         super(NoteCombFrame,self).__init__(parent,title='Observertron')
         
@@ -117,9 +119,12 @@ class NoteCombFrame(DocumentFrame):
     
     def set_show_linenumbers(self, value):
         if value:
-            self.text.SetMarginWidth(0,32)
+            num_lines=self.text.GetLineCount()
+            width=self.text.TextWidth(wx.stc.STC_STYLE_DEFAULT,'%03d'%num_lines)
+            self.text.SetMarginWidth(0,width+5)
         else:
             self.text.SetMarginWidth(0,0)
+        self._show_line_numbers=value
     
     @check_for_modification
     def OnClose(self,event):
@@ -135,6 +140,14 @@ class NoteCombFrame(DocumentFrame):
     def TextSetFocus(self,event):
         self.UpdateMenus()
         event.Skip()
+    
+    def UpdateMenus(self):
+        super(NoteCombFrame,self).UpdateMenus()
+        
+        # check we've initialised fully
+        if not getattr(self, 'text', None):
+            return
+        self.set_show_linenumbers(self._show_line_numbers)
     
     def UpdateFromDoc(self):
         super(NoteCombFrame,self).UpdateFromDoc()
