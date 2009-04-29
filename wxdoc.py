@@ -133,6 +133,7 @@ class DocumentFrame(wx.Frame):
 
         self.UpdateMenus()
         self.update_recent_files_menu()
+        
 
     def GetDocFilename(self):
         return self.doc.filename
@@ -197,13 +198,8 @@ class DocumentFrame(wx.Frame):
             self.UpdateMenus()
 
     def OnPreferences(self,event):
-        if self.__PREFS_DIALOG__:
-            dialog=self.__PREFS_DIALOG__(self)
-            dialog.Center()
-            if dialog.ShowModal() == wx.ID_OK:
-                dialog.UpdatePrefs()
-            dialog.Destroy()
-
+        wx.GetApp().ShowPreferences()
+    
     def update_recent_files_menu(self):
         recent_files=self.prefs.get('recent_files',[])
         self.file_clear_menu.Enable(len(recent_files)>0)
@@ -277,10 +273,17 @@ class DocApp(wx.App):
         files=sys.argv[1:]
         self.OpenFiles(files)
         
+        self.prefs_dialog=self.__DOC_FRAME__.__PREFS_DIALOG__(None)
+        self.prefs_dialog.Center()
+        
         return True
     
     def OnExit(self):
         del self._singleInstanceChecker
+    
+    def ShowPreferences(self):
+        if not self.prefs_dialog.IsShown():
+            self.prefs_dialog.Show()
     
     def OpenFiles(self, files):
         self._singleInstanceChecker = wx.SingleInstanceChecker(self.GetAppName() + '-' + wx.GetUserId(), tempfile.gettempdir())
@@ -357,3 +360,5 @@ class DocApp(wx.App):
             closing.add(frame)
         
         self._frames=[frame for frame in self._frames if frame not in closing]
+        if not self._frames:
+            self.prefs_dialog.Destroy()

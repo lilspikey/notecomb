@@ -21,26 +21,20 @@ class PrefDialog(wx.Dialog):
         
         self.prefs=Preferences()
         
-        self.show_line_numbers=wx.CheckBox(self, -1, "Show line numbers")
-        self.auto_save=wx.CheckBox(self, -1, "Auto-save every five minutes")
-        
-        self.show_line_numbers.SetValue(self.prefs.get(PREF_SHOW_LINENUMBERS,True))
-        self.auto_save.SetValue(self.prefs.get(PREF_AUTO_SAVE,True))
+        self.show_line_numbers=self.CreatePrefsCheckBox("Show line numbers", PREF_SHOW_LINENUMBERS, True)
+        self.auto_save=self.CreatePrefsCheckBox("Auto-save every five minutes", PREF_AUTO_SAVE, True)
         
         sizer.Add(self.show_line_numbers, 0, wx.ALL, 10)
         sizer.Add(self.auto_save, 0, wx.ALL, 10)
         
         button_sizer=wx.StdDialogButtonSizer()
         
-        cancel=wx.Button(self,wx.ID_CANCEL,"Cancel")
-        ok=wx.Button(self,wx.ID_OK,"Ok")
+        ok=wx.Button(self,wx.ID_OK,"Done")
         ok.SetDefault()
         
-        button_sizer.AddButton(cancel)
         button_sizer.AddButton(ok)
         
         button_sizer.SetAffirmativeButton(ok)
-        button_sizer.SetCancelButton(cancel)
         
         button_sizer.Realize()
         
@@ -53,9 +47,19 @@ class PrefDialog(wx.Dialog):
         
         self.Fit()
     
-    def UpdatePrefs(self):
-        self.prefs.set(PREF_SHOW_LINENUMBERS, self.show_line_numbers.GetValue())
-        self.prefs.set(PREF_AUTO_SAVE, self.auto_save.GetValue())    
+    def CreatePrefsCheckBox(self, label, pref_key, default):
+        checkbox=wx.CheckBox(self, -1, label)
+        
+        checkbox.SetValue(self.prefs.get(pref_key,default))
+        
+        def update_pref(event):
+            self.prefs.set(pref_key, checkbox.GetValue())
+        
+        checkbox.Bind(wx.EVT_CHECKBOX, update_pref)
+        return checkbox
+#    def UpdatePref(self):
+#        self.prefs.set(PREF_SHOW_LINENUMBERS, self.show_line_numbers.GetValue())
+#        self.prefs.set(PREF_AUTO_SAVE, self.auto_save.GetValue())    
     
 class NoteCombFrame(DocumentFrame):
     
