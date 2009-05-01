@@ -61,7 +61,8 @@ def py2exe_options(setup_args):
             'name': "NoteComb",
             'dest_base': "NoteComb",
             'version': "0.2.0",
-            "other_resources": [(24,1,py2exe_manifest)]
+            "other_resources": [(24,1,py2exe_manifest)],
+            "icon_resources": [(1, "resources/icon.ico")]
         }]
 
         setup_args['options']['py2exe']={'bundle_files': 1}
