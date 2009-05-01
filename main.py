@@ -2,7 +2,7 @@ import wx
 import wx.stc
 
 import sys
-print "here"
+
 from notecomb import NoteCombFrame
 from wxdoc import DocApp
 

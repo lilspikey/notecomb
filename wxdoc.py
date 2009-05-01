@@ -137,14 +137,10 @@ class DocumentFrame(wx.Frame):
         self.SetWindowsIcon()
     
     def SetWindowsIcon(self):
-        try:
-            #import win32api
-            #exeName = win32api.GetModuleFileName(win32api.GetModuleHandle(None))
+        if sys.platform == 'win32':
             exeName = sys.executable
             icon = wx.Icon(exeName, wx.BITMAP_TYPE_ICO)
             self.SetIcon(icon)
-        except ImportError:
-            pass
 
     def GetDocFilename(self):
         return self.doc.filename
