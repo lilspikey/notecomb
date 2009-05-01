@@ -346,6 +346,8 @@ class DocApp(wx.App):
     def FrameClosed(self, frame):
         if frame in self._frames:
             self._frames.remove(frame)
+            if not self._frames:
+                self.prefs_dialog.Destroy()
     
     def FrameRaised(self, frame):
         # add frame to front of list
@@ -368,5 +370,4 @@ class DocApp(wx.App):
             closing.add(frame)
         
         self._frames=[frame for frame in self._frames if frame not in closing]
-        if not self._frames:
-            self.prefs_dialog.Destroy()
+        
