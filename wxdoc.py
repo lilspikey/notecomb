@@ -134,6 +134,17 @@ class DocumentFrame(wx.Frame):
         self.UpdateMenus()
         self.update_recent_files_menu()
         
+        self.SetWindowsIcon()
+    
+    def SetWindowsIcon(self):
+        try:
+            #import win32api
+            #exeName = win32api.GetModuleFileName(win32api.GetModuleHandle(None))
+            exeName = sys.executable
+            icon = wx.Icon(exeName, wx.BITMAP_TYPE_ICO)
+            self.SetIcon(icon)
+        except ImportError:
+            pass
 
     def GetDocFilename(self):
         return self.doc.filename
@@ -342,8 +353,9 @@ class DocApp(wx.App):
     
     def FrameRaised(self, frame):
         # add frame to front of list
-        self._frames.remove(frame)
-        self._frames.insert(0, frame)
+        if frame in self._frames:
+            self._frames.remove(frame)
+            self._frames.insert(0, frame)
     
     def Quit(self):
         # try to close all windows
