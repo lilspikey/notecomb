@@ -14,7 +14,7 @@ AppSupportURL=http://www.littlespikeyland.com/
 AppUpdatesURL=http://www.littlespikeyland.com/
 DefaultDirName={pf}\NoteComb
 DefaultGroupName=NoteComb
-OutputBaseFilename=NoteCombSetup0.2
+OutputBaseFilename=NoteComb0.2Install
 Compression=lzma
 SolidCompression=yes
 
