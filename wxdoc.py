@@ -346,6 +346,9 @@ class DocApp(wx.App):
     def FrameClosed(self, frame):
         if frame in self._frames:
             self._frames.remove(frame)
+            # see if this is the last
+            # frame being closed and if so
+            # destroy the prefs dialog
             if not self._frames:
                 self.prefs_dialog.Destroy()
     
@@ -362,12 +365,8 @@ class DocApp(wx.App):
         # problems as windows get raised etc
         frames=list(self._frames)
         
-        closing=set()
         for frame in frames:
             res=frame.OnClose(None)
             if res == wx.ID_CANCEL:
                 break # cancel pressed
-            closing.add(frame)
-        
-        self._frames=[frame for frame in self._frames if frame not in closing]
         
