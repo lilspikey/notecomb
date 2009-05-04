@@ -3,3 +3,5 @@ build
 dist
 installer/Output
 resources/Thumbs.db
+.coverage
+
