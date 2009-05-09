@@ -158,6 +158,7 @@ class NoteCombFrame(DocumentFrame):
         self.search.ChangeValue(self.doc.current_search)
         self._update_colours()
         self._update_visible_text()
+        self.UpdateMenus()
     
     def SetRegularColours(self):
         self.text.SetForegroundColour('#000000')
