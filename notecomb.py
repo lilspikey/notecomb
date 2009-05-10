@@ -62,14 +62,15 @@ class PrefDialog(wx.Dialog):
 #        self.prefs.set(PREF_AUTO_SAVE, self.auto_save.GetValue())    
     
 class NoteCombFrame(DocumentFrame):
-    
+    __APP_VERSION__='0.2.1 alpha'
+    __APP_WEBSITE__='http://www.psychicorigami.com/notecomb/'
     __DOCUMENT_CLASS__=UndoableDocument
     __PREFS_DIALOG__=PrefDialog
     
     _show_line_numbers=False
     
     def __init__(self,parent):
-        super(NoteCombFrame,self).__init__(parent,title='Observertron')
+        super(NoteCombFrame,self).__init__(parent,title='NoteComb')
         
         self.panel=wx.Panel(self)
         
@@ -248,8 +249,8 @@ class NoteCombFrame(DocumentFrame):
     def OnAbout(self,event):
         info=wx.AboutDialogInfo()
         info.SetName(wx.GetApp().GetAppName())
-        info.SetVersion('0.2 alpha')
-        info.SetDescription('A program for recording observations')
+        info.SetVersion(self.__APP_VERSION__)
+        info.SetDescription('A program for combing through notes')
         info.AddDeveloper('John Montgomery')
         info.SetCopyright('(C) John Montgomery 2009')
         wx.AboutBox(info)

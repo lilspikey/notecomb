@@ -2,6 +2,7 @@ import wx
 
 import sys
 import tempfile
+import webbrowser
 try:
     import cPickle as pickle
 except ImportError:
@@ -126,6 +127,8 @@ class DocumentFrame(wx.Frame):
         self.menubar.Append(self.help_menu, "&Help")
 
         self.AddMenuItem(self.help_menu, "About %s" % wx.GetApp().GetAppName(), self.OnAbout, wx.ID_ABOUT)
+        self.edit_menu.AppendSeparator()
+        self.AddMenuItem(self.help_menu, "Visit %s" % self.__APP_WEBSITE__, self.OnWebsite, -1)
 
         self.SetMenuBar(self.menubar)
 
@@ -264,6 +267,9 @@ class DocumentFrame(wx.Frame):
         if self.doc.can_redo():
             self.doc.redo()
             self.UpdateFromDoc()
+    
+    def OnWebsite(self,event):
+        webbrowser.open(self.__APP_WEBSITE__)
 
 class DocApp(wx.App):
 
