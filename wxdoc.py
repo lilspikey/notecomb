@@ -319,6 +319,11 @@ class DocApp(wx.App):
             for filename in files:
                 self.OpenFile(filename)
     
+    def SetDefaultFrameSize(self, frame):
+        _,_,width,height = wx.ClientDisplayRect()
+        width=width/2
+        frame.SetSize((width, height))
+    
     def OpenFile(self, filename):
         # see if we already have a window
         # open for the filename passed in
@@ -339,6 +344,7 @@ class DocApp(wx.App):
             self._frames.append(frame)
         else:
             frame=empty_frame
+        self.SetDefaultFrameSize(frame)
         frame.Show()
 
         if filename:
