@@ -11,6 +11,8 @@ except ImportError:
 from events import Event
 from pipe import Pipe
 
+PREF_WINDOW_STATE='WINDOW_STATE'
+
 class Singleton(object):
 
     _instances = {}
@@ -140,13 +142,50 @@ class DocumentFrame(wx.Frame):
         self.update_recent_files_menu()
         
         self.SetWindowsIcon()
+        
+        self.SetDefaultSizeAndPosition()
     
     def SetWindowsIcon(self):
         if sys.platform == 'win32':
             exeName = sys.executable
             icon = wx.Icon(exeName, wx.BITMAP_TYPE_ICO)
             self.SetIcon(icon)
-
+    
+    def SetDefaultSizeAndPosition(self):
+        sx,sy,swidth,sheight = wx.ClientDisplayRect()
+        
+        try:
+            state,x,y,width,height=self.prefs.get(PREF_WINDOW_STATE,None)
+        except TypeError:
+            state,x,y,width,height = '', sx, sy, swidth/2, sheight
+        
+        # make sure we're inside the screen and we have sensible width and height
+        width = max(320, min(width, swidth))
+        height = max(320, min(height, sheight))
+        
+        if x < sx:
+            x = sx
+        if y < sy:
+            y = sy
+        if (x+width) > (sx+swidth):
+            x = (sx+swidth)-width
+        if (y+height) > (sy+sheight):
+            y = (sy+sheight)-height
+        
+        self.SetPosition((x,y))
+        self.SetSize((width, height))
+        
+        if state:
+            self.Maximize()
+    
+    def SaveDefaultSizeAndPosition(self):
+        x,y = self.GetPosition()
+        width, height = self.GetSize()
+        state = self.IsMaximized()
+        
+        self.prefs.set(PREF_WINDOW_STATE,(state,x,y,width,height))
+        self.prefs.flush()
+    
     def GetDocFilename(self):
         return self.doc.filename
     
@@ -250,6 +289,7 @@ class DocumentFrame(wx.Frame):
 
     @check_for_modification
     def OnClose(self, event):
+        self.SaveDefaultSizeAndPosition()
         self.Destroy()
 
     def OnDestroyed(self, event):
@@ -321,11 +361,6 @@ class DocApp(wx.App):
             for filename in files:
                 self.OpenFile(filename)
     
-    def SetDefaultFrameSize(self, frame):
-        _,_,width,height = wx.ClientDisplayRect()
-        width=width/2
-        frame.SetSize((width, height))
-    
     def OpenFile(self, filename):
         # see if we already have a window
         # open for the filename passed in
@@ -346,7 +381,6 @@ class DocApp(wx.App):
             self._frames.append(frame)
         else:
             frame=empty_frame
-        self.SetDefaultFrameSize(frame)
         frame.Show()
 
         if filename:

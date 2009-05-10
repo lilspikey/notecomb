@@ -54,6 +54,7 @@ class PrefDialog(wx.Dialog):
         
         def update_pref(event):
             self.prefs.set(pref_key, checkbox.GetValue())
+            self.prefs.flush()
         
         checkbox.Bind(wx.EVT_CHECKBOX, update_pref)
         return checkbox
@@ -133,6 +134,7 @@ class NoteCombFrame(DocumentFrame):
     
     @check_for_modification
     def OnClose(self,event):
+        self.SaveDefaultSizeAndPosition()
         self.timer.Stop()
         self.Destroy()
     
