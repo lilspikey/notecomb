@@ -1,5 +1,7 @@
 from distutils.core import setup
 
+from notecomb import NoteCombFrame
+
 
 def py2app_options(setup_args):
     try:
@@ -7,8 +9,8 @@ def py2app_options(setup_args):
         # create py2app options
         py2app_plist = {
             'CFBundleName':               "NoteComb",
-            'CFBundleShortVersionString': "0.2.0",
-            'CFBundleGetInfoString':      "NoteComb 0.2.0 alpha",
+            'CFBundleShortVersionString': NoteCombFrame.__APP_VERSION__,
+            'CFBundleGetInfoString':      "NoteComb %s" % NoteCombFrame.__APP_VERSION__,
             'CFBundleExecutable':         "NoteComb",
             'CFBundleIdentifier':         "com.psychicorigami.notecomb",
             'CFBundleDocumentTypes': [ { 'CFBundleTypeExtensions': ["*"], 'CFBundleTypeName': "kUTTypeText", 'CFBundleTypeRole': "Editor", "CFBundleTypeIconFile": "combdoc.icns" } ],
@@ -60,7 +62,7 @@ def py2exe_options(setup_args):
             'script': "main.py",
             'name': "NoteComb",
             'dest_base': "NoteComb",
-            'version': "0.2.0",
+            'version': NoteCombFrame.__APP_VERSION__,
             "other_resources": [(24,1,py2exe_manifest)],
             "icon_resources": [(1, "resources/icon.ico")]
         }]
