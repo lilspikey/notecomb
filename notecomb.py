@@ -158,7 +158,9 @@ class NoteCombFrame(DocumentFrame):
     
     def UpdateFromDoc(self):
         super(NoteCombFrame,self).UpdateFromDoc()
-        self.search.ChangeValue(self.doc.current_search)
+        q=self.doc.current_search
+        self.search.ChangeValue(q)
+        self.search.ShowCancelButton(q != '') 
         self._update_colours()
         self._update_visible_text()
         self.UpdateMenus()
