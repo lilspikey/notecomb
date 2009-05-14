@@ -7,14 +7,14 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{39DCAA6B-9CD4-48FD-AA30-A2874A84BA8A}
 AppName=NoteComb
-AppVerName=NoteComb 0.2
+AppVerName=NoteComb 0.2.1
 AppPublisher=LittleSpikeyLand
-AppPublisherURL=http://www.littlespikeyland.com/
-AppSupportURL=http://www.littlespikeyland.com/
-AppUpdatesURL=http://www.littlespikeyland.com/
+AppPublisherURL=http://www.psychicorigami.com/notecomb/
+AppSupportURL=http://www.psychicorigami.com/notecomb/
+AppUpdatesURL=http://www.psychicorigami.com/notecomb/
 DefaultDirName={pf}\NoteComb
 DefaultGroupName=NoteComb
-OutputBaseFilename=NoteComb0.2Install
+OutputBaseFilename=NoteComb0.2.1Install
 Compression=lzma
 SolidCompression=yes
 

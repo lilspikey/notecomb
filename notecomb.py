@@ -63,7 +63,7 @@ class PrefDialog(wx.Dialog):
 #        self.prefs.set(PREF_AUTO_SAVE, self.auto_save.GetValue())    
     
 class NoteCombFrame(DocumentFrame):
-    __APP_VERSION__='0.2.1 alpha'
+    __APP_VERSION__='0.2.1'
     __APP_WEBSITE__='http://www.psychicorigami.com/notecomb/'
     __DOCUMENT_CLASS__=UndoableDocument
     __PREFS_DIALOG__=PrefDialog
